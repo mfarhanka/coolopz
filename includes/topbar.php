@@ -22,6 +22,8 @@ $userInitials = $userInitials ?? 'AU';
                             <span><?= htmlspecialchars($currentUserRole, ENT_QUOTES, 'UTF-8') ?></span>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-portal-secondary btn-sm">Logout</button>
+                    <form method="post" action="logout.php" class="logout-form m-0">
+                        <button type="submit" class="btn btn-portal-secondary btn-sm">Logout</button>
+                    </form>
                 </div>
             </header>

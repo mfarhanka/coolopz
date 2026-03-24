@@ -508,3 +508,94 @@ body {
         width: 100%;
     }
 }
+
+.login-body {
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background:
+        radial-gradient(circle at top left, rgba(30, 111, 217, 0.14), transparent 30%),
+        linear-gradient(180deg, #f4f9ff 0%, #eef5ff 100%);
+}
+
+.login-shell {
+    width: min(100%, 440px);
+}
+
+.login-card {
+    padding: 1.75rem;
+    background: var(--portal-white);
+    border: 1px solid var(--portal-border);
+    border-radius: 22px;
+    box-shadow: 0 20px 45px rgba(10, 45, 91, 0.08);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.login-brand strong {
+    display: block;
+    color: var(--portal-blue-dark);
+}
+
+.login-brand span:last-child {
+    color: var(--portal-muted);
+    font-size: 0.9rem;
+}
+
+.login-copy {
+    margin-bottom: 1rem;
+}
+
+.login-title {
+    margin: 0 0 0.4rem;
+    font-size: 1.8rem;
+    color: var(--portal-blue-dark);
+}
+
+.login-copy p {
+    margin: 0;
+    color: var(--portal-muted);
+}
+
+.login-alert {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    background: #fff0eb;
+    border: 1px solid #ffd3c8;
+    color: #bc4b2c;
+    font-weight: 500;
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.form-control,
+.form-select {
+    min-height: 48px;
+    border-radius: 12px;
+    border-color: var(--portal-border);
+    box-shadow: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #a8c9f3;
+    box-shadow: 0 0 0 0.2rem rgba(30, 111, 217, 0.1);
+}
+
+.login-help {
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--portal-border);
+    color: var(--portal-muted);
+    font-size: 0.92rem;
+}

@@ -1,9 +1,14 @@
 <?php
+require_once __DIR__ . '/includes/auth.php';
+
+coolopz_require_login();
+
+$currentUser = coolopz_current_user();
 $pageTitle = 'CoolOpz Portal | Customers';
 $activePage = 'customers';
-$currentUserName = 'Admin User';
-$currentUserRole = 'Operations Admin';
-$userInitials = 'AU';
+$currentUserName = $currentUser['name'] ?? 'Admin User';
+$currentUserRole = $currentUser['role'] ?? 'Operations Admin';
+$userInitials = coolopz_user_initials($currentUserName);
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
