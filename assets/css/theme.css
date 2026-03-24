@@ -46,6 +46,17 @@ body {
     box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
 }
 
+.portal-sidebar .offcanvas-body {
+    display: flex;
+    flex: 1;
+    padding: 2rem 1.5rem;
+}
+
+.portal-offcanvas-header {
+    background: linear-gradient(180deg, var(--portal-sidebar) 0%, var(--portal-sidebar-deep) 100%);
+    border-bottom: 1px solid var(--portal-sidebar-line);
+}
+
 .sidebar-brand {
     display: flex;
     align-items: center;
@@ -146,6 +157,39 @@ body {
     background: linear-gradient(180deg, var(--portal-sidebar) 0%, var(--portal-sidebar-deep) 100%);
     border: 1px solid var(--portal-sidebar-line);
     border-radius: 18px;
+}
+
+.topbar-main {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.menu-toggle {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.22rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.55rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.menu-toggle-bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--portal-white);
 }
 
 .topbar-label {
@@ -427,8 +471,14 @@ body {
         position: static;
         height: auto;
         overflow-y: visible;
+        width: min(280px, 85vw);
+        padding: 0;
         border-right: 0;
         border-bottom: 1px solid var(--portal-sidebar-line);
+    }
+
+    .portal-sidebar .offcanvas-body {
+        padding: 1.25rem;
     }
 
 }

@@ -28,19 +28,31 @@ $navItems = [
     ],
 ];
 ?>
-        <aside class="portal-sidebar">
-            <div class="w-100">
-                <a class="sidebar-brand" href="index.php">
+        <aside class="portal-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="portalSidebar" aria-labelledby="portalSidebarLabel">
+            <div class="offcanvas-header portal-offcanvas-header d-lg-none">
+                <a class="sidebar-brand" href="index.php" id="portalSidebarLabel">
                     <span class="brand-mark">CO</span>
                     <span>
                         <span class="brand-title d-block">CoolOpz Portal</span>
                         <span class="brand-subtitle d-block">Aircond Service Management</span>
                     </span>
                 </a>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#portalSidebar" aria-label="Close"></button>
+            </div>
 
-                <nav class="sidebar-nav mt-4">
+            <div class="offcanvas-body portal-sidebar-body">
+                <div class="w-100">
+                    <a class="sidebar-brand d-none d-lg-flex" href="index.php">
+                        <span class="brand-mark">CO</span>
+                        <span>
+                            <span class="brand-title d-block">CoolOpz Portal</span>
+                            <span class="brand-subtitle d-block">Aircond Service Management</span>
+                        </span>
+                    </a>
+
+                    <nav class="sidebar-nav mt-4 mt-lg-4">
 <?php foreach ($navItems as $item): ?>
-                    <a class="sidebar-link<?= $activePage === $item['key'] ? ' active' : '' ?>" href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>">
+                    <a class="sidebar-link<?= $activePage === $item['key'] ? ' active' : '' ?>" href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>" data-bs-dismiss="offcanvas" data-bs-target="#portalSidebar">
                         <span class="sidebar-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <?= $item['icon'] ?>
@@ -49,6 +61,7 @@ $navItems = [
                         <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
                     </a>
 <?php endforeach; ?>
-                </nav>
+                    </nav>
+                </div>
             </div>
         </aside>

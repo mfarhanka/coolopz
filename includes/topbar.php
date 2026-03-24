@@ -4,7 +4,12 @@ $currentUserRole = $currentUserRole ?? 'Operations Admin';
 $userInitials = $userInitials ?? 'AU';
 ?>
             <header class="portal-topbar">
-                <div>
+                <div class="topbar-main">
+                    <button type="button" class="btn menu-toggle d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#portalSidebar" aria-controls="portalSidebar" aria-label="Open menu">
+                        <span class="menu-toggle-bar"></span>
+                        <span class="menu-toggle-bar"></span>
+                        <span class="menu-toggle-bar"></span>
+                    </button>
                     <span class="topbar-label">CoolOpz Portal</span>
                     <p class="topbar-copy">Signed in as <?= htmlspecialchars($currentUserRole, ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
