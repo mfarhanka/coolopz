@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoolOpz Portal</title>
+    <title>CoolOpz Portal | Jobs</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
                 </a>
 
                 <nav class="sidebar-nav mt-4">
-                    <a class="sidebar-link active" href="index.html">
+                    <a class="sidebar-link" href="index.html">
                         <span class="sidebar-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 11.5 12 4l9 7.5"></path>
@@ -32,7 +32,7 @@
                         </span>
                         <span>Dashboard</span>
                     </a>
-                    <a class="sidebar-link" href="jobs.html">
+                    <a class="sidebar-link active" href="jobs.html">
                         <span class="sidebar-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="4" y="5" width="16" height="14" rx="2"></rect>
@@ -69,9 +69,9 @@
 
             <div class="sidebar-footer">
                 <div class="simple-panel sidebar-card">
-                    <span class="section-label">Today</span>
-                    <h2 class="panel-title">24 active jobs</h2>
-                    <p>Separate pages for dashboard, operations, customers, and reporting.</p>
+                    <span class="section-label">Jobs</span>
+                    <h2 class="panel-title">6 teams dispatched</h2>
+                    <p>Track urgent repairs, installations, and scheduled maintenance from one page.</p>
                 </div>
             </div>
         </aside>
@@ -80,21 +80,17 @@
             <section class="hero-section">
                 <div class="row align-items-center g-4">
                     <div class="col-xl-8">
-                        <span class="section-label">Dashboard</span>
-                        <h1 class="hero-title">A clear daily view of aircond operations.</h1>
-                        <p class="hero-copy">The dashboard now acts as the home page for CoolOpz Portal, while jobs, customers, and reports live on their own screens.</p>
-                        <div class="d-flex flex-wrap gap-3">
-                            <a class="btn btn-portal-primary" href="jobs.html">View Jobs</a>
-                            <a class="btn btn-portal-secondary" href="customers.html">Open Customers</a>
-                        </div>
+                        <span class="section-label">Jobs</span>
+                        <h1 class="hero-title">Manage service jobs by status, team, and priority.</h1>
+                        <p class="hero-copy">This page focuses on daily execution with active tickets, assigned crews, and a short schedule view for dispatch coordination.</p>
                     </div>
                     <div class="col-xl-4">
                         <div class="simple-panel hero-note">
-                            <span class="section-label">Operations snapshot</span>
+                            <span class="section-label">Dispatch window</span>
                             <ul class="snapshot-list">
-                                <li>7 technicians on-site</li>
-                                <li>3 urgent repairs waiting</li>
-                                <li>18 jobs completed today</li>
+                                <li>4 urgent tickets</li>
+                                <li>12 maintenance visits</li>
+                                <li>8 installation tasks</li>
                             </ul>
                         </div>
                     </div>
@@ -104,36 +100,36 @@
             <section class="row g-3 g-lg-4">
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
-                        <span class="stat-label">Active Jobs</span>
-                        <strong class="stat-value">24</strong>
-                        <p>Current jobs being handled today.</p>
+                        <span class="stat-label">Open Tickets</span>
+                        <strong class="stat-value">29</strong>
+                        <p>All service jobs not yet closed.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
-                        <span class="stat-label">Available Technicians</span>
-                        <strong class="stat-value">12</strong>
-                        <p>Ready for maintenance and emergency calls.</p>
+                        <span class="stat-label">On Site</span>
+                        <strong class="stat-value">14</strong>
+                        <p>Technicians currently working at client locations.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
-                        <span class="stat-label">Completed Today</span>
-                        <strong class="stat-value">18</strong>
-                        <p>Jobs closed and ready for invoicing.</p>
+                        <span class="stat-label">Awaiting Parts</span>
+                        <strong class="stat-value">5</strong>
+                        <p>Jobs paused until replacement parts arrive.</p>
                     </div>
                 </div>
             </section>
 
             <section class="row g-4 mt-1">
-                <div class="col-xl-7">
+                <div class="col-xl-8">
                     <div class="simple-panel h-100">
                         <div class="panel-head mb-3">
                             <div>
-                                <span class="section-label">Priority queue</span>
-                                <h2 class="panel-title">Current Service Jobs</h2>
+                                <span class="section-label">Service board</span>
+                                <h2 class="panel-title">Active Job List</h2>
                             </div>
-                            <a class="btn btn-portal-secondary btn-sm" href="jobs.html">All Jobs</a>
+                            <span class="subtle-note">Updated 10:24 AM</span>
                         </div>
 
                         <div class="table-responsive">
@@ -142,33 +138,38 @@
                                     <tr>
                                         <th>Ticket</th>
                                         <th>Client</th>
-                                        <th>Type</th>
+                                        <th>Technician</th>
+                                        <th>Zone</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>#COP-2041</td>
-                                        <td>Skyline Residence</td>
-                                        <td>Repair</td>
+                                        <td>#COP-2048</td>
+                                        <td>Northpoint Suites</td>
+                                        <td>Team Alpha</td>
+                                        <td>KL Central</td>
                                         <td><span class="status-badge status-urgent">Urgent</span></td>
                                     </tr>
                                     <tr>
-                                        <td>#COP-2038</td>
+                                        <td>#COP-2045</td>
                                         <td>Pelita Food Hall</td>
-                                        <td>Maintenance</td>
+                                        <td>Team Delta</td>
+                                        <td>Shah Alam</td>
                                         <td><span class="status-badge status-progress">In Progress</span></td>
                                     </tr>
                                     <tr>
-                                        <td>#COP-2035</td>
+                                        <td>#COP-2042</td>
                                         <td>Riverview Co-Working</td>
-                                        <td>Installation</td>
+                                        <td>Team Sigma</td>
+                                        <td>Putrajaya</td>
                                         <td><span class="status-badge status-queued">Queued</span></td>
                                     </tr>
                                     <tr>
-                                        <td>#COP-2031</td>
+                                        <td>#COP-2039</td>
                                         <td>Harbor Dental Clinic</td>
-                                        <td>Gas Top-Up</td>
+                                        <td>Team Nova</td>
+                                        <td>Ampang</td>
                                         <td><span class="status-badge status-complete">Completed</span></td>
                                     </tr>
                                 </tbody>
@@ -177,31 +178,34 @@
                     </div>
                 </div>
 
-                <div class="col-xl-5">
+                <div class="col-xl-4">
                     <div class="simple-panel h-100">
-                        <span class="section-label">Quick insights</span>
-                        <h2 class="panel-title">Today&apos;s Highlights</h2>
+                        <span class="section-label">Schedule</span>
+                        <h2 class="panel-title">Dispatch Timeline</h2>
                         <div class="info-list mt-3">
                             <div class="info-row">
                                 <div>
-                                    <strong>Response time</strong>
-                                    <p>Average dispatch in 28 minutes across all zones.</p>
+                                    <strong>08:30</strong>
+                                    <p>Warehouse release for compressor replacements.</p>
                                 </div>
-                                <span class="status-badge status-progress">Stable</span>
                             </div>
                             <div class="info-row">
                                 <div>
-                                    <strong>Pending invoices</strong>
-                                    <p>6 completed jobs still waiting for billing release.</p>
+                                    <strong>11:00</strong>
+                                    <p>Commercial maintenance visit at Meridian Office Park.</p>
                                 </div>
-                                <span class="status-badge status-queued">Review</span>
                             </div>
                             <div class="info-row">
                                 <div>
-                                    <strong>Contract renewals</strong>
-                                    <p>3 customers need follow-up before the end of the week.</p>
+                                    <strong>14:00</strong>
+                                    <p>New installation handover at Riverview Co-Working.</p>
                                 </div>
-                                <span class="status-badge status-urgent">Action</span>
+                            </div>
+                            <div class="info-row">
+                                <div>
+                                    <strong>17:30</strong>
+                                    <p>Close completed jobs and sync service photos.</p>
+                                </div>
                             </div>
                         </div>
                     </div>

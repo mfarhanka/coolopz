@@ -193,6 +193,13 @@ body {
     border-radius: 18px;
 }
 
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
 .hero-note,
 .sidebar-card {
     background: var(--portal-blue-soft);
@@ -244,6 +251,11 @@ body {
     font-size: 2.4rem;
     line-height: 1;
     color: var(--portal-blue-dark);
+}
+
+.subtle-note {
+    font-size: 0.9rem;
+    color: var(--portal-muted);
 }
 
 .portal-table {
@@ -314,6 +326,63 @@ body {
     box-shadow: 0 0 0 0.2rem rgba(30, 111, 217, 0.1);
 }
 
+.info-list,
+.card-stack,
+.chart-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.info-row,
+.stack-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    background: #fbfdff;
+    border: 1px solid var(--portal-border);
+}
+
+.info-row p,
+.stack-card p {
+    margin: 0.25rem 0 0;
+    color: var(--portal-muted);
+}
+
+.chart-row {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.chart-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.chart-meta span {
+    color: var(--portal-muted);
+    font-weight: 600;
+}
+
+.chart-bar {
+    width: 100%;
+    height: 12px;
+    background: #e8f1fb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.chart-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--portal-blue), #63a8ff);
+}
+
 @media (max-width: 991.98px) {
     .portal-layout {
         grid-template-columns: 1fr;
@@ -334,5 +403,12 @@ body {
     .portal-main,
     .simple-panel {
         padding: 1.25rem;
+    }
+
+    .panel-head,
+    .info-row,
+    .stack-card {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

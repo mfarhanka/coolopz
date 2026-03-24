@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoolOpz Portal</title>
+    <title>CoolOpz Portal | Customers</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
                 </a>
 
                 <nav class="sidebar-nav mt-4">
-                    <a class="sidebar-link active" href="index.html">
+                    <a class="sidebar-link" href="index.html">
                         <span class="sidebar-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M3 11.5 12 4l9 7.5"></path>
@@ -42,7 +42,7 @@
                         </span>
                         <span>Jobs</span>
                     </a>
-                    <a class="sidebar-link" href="customers.html">
+                    <a class="sidebar-link active" href="customers.html">
                         <span class="sidebar-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
@@ -69,9 +69,9 @@
 
             <div class="sidebar-footer">
                 <div class="simple-panel sidebar-card">
-                    <span class="section-label">Today</span>
-                    <h2 class="panel-title">24 active jobs</h2>
-                    <p>Separate pages for dashboard, operations, customers, and reporting.</p>
+                    <span class="section-label">Customers</span>
+                    <h2 class="panel-title">68 active accounts</h2>
+                    <p>Track contract renewals, service history, and client priorities.</p>
                 </div>
             </div>
         </aside>
@@ -80,21 +80,17 @@
             <section class="hero-section">
                 <div class="row align-items-center g-4">
                     <div class="col-xl-8">
-                        <span class="section-label">Dashboard</span>
-                        <h1 class="hero-title">A clear daily view of aircond operations.</h1>
-                        <p class="hero-copy">The dashboard now acts as the home page for CoolOpz Portal, while jobs, customers, and reports live on their own screens.</p>
-                        <div class="d-flex flex-wrap gap-3">
-                            <a class="btn btn-portal-primary" href="jobs.html">View Jobs</a>
-                            <a class="btn btn-portal-secondary" href="customers.html">Open Customers</a>
-                        </div>
+                        <span class="section-label">Customers</span>
+                        <h1 class="hero-title">Keep customer accounts, contracts, and follow-ups organized.</h1>
+                        <p class="hero-copy">This page groups active accounts, recent touchpoints, and renewal opportunities so service and sales teams can act quickly.</p>
                     </div>
                     <div class="col-xl-4">
                         <div class="simple-panel hero-note">
-                            <span class="section-label">Operations snapshot</span>
+                            <span class="section-label">Account health</span>
                             <ul class="snapshot-list">
-                                <li>7 technicians on-site</li>
-                                <li>3 urgent repairs waiting</li>
-                                <li>18 jobs completed today</li>
+                                <li>11 annual contracts</li>
+                                <li>6 renewals due this month</li>
+                                <li>4 clients need callback today</li>
                             </ul>
                         </div>
                     </div>
@@ -104,23 +100,23 @@
             <section class="row g-3 g-lg-4">
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
-                        <span class="stat-label">Active Jobs</span>
-                        <strong class="stat-value">24</strong>
-                        <p>Current jobs being handled today.</p>
+                        <span class="stat-label">Commercial Clients</span>
+                        <strong class="stat-value">28</strong>
+                        <p>Businesses with recurring service plans.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
-                        <span class="stat-label">Available Technicians</span>
-                        <strong class="stat-value">12</strong>
-                        <p>Ready for maintenance and emergency calls.</p>
+                        <span class="stat-label">Residential Accounts</span>
+                        <strong class="stat-value">40</strong>
+                        <p>Homeowners and property management accounts.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
-                        <span class="stat-label">Completed Today</span>
-                        <strong class="stat-value">18</strong>
-                        <p>Jobs closed and ready for invoicing.</p>
+                        <span class="stat-label">Renewals Pending</span>
+                        <strong class="stat-value">6</strong>
+                        <p>Contracts that need follow-up this month.</p>
                     </div>
                 </div>
             </section>
@@ -130,78 +126,60 @@
                     <div class="simple-panel h-100">
                         <div class="panel-head mb-3">
                             <div>
-                                <span class="section-label">Priority queue</span>
-                                <h2 class="panel-title">Current Service Jobs</h2>
+                                <span class="section-label">Accounts</span>
+                                <h2 class="panel-title">Customer Portfolio</h2>
                             </div>
-                            <a class="btn btn-portal-secondary btn-sm" href="jobs.html">All Jobs</a>
+                            <span class="subtle-note">68 total accounts</span>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table portal-table align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Ticket</th>
-                                        <th>Client</th>
-                                        <th>Type</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>#COP-2041</td>
-                                        <td>Skyline Residence</td>
-                                        <td>Repair</td>
-                                        <td><span class="status-badge status-urgent">Urgent</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2038</td>
-                                        <td>Pelita Food Hall</td>
-                                        <td>Maintenance</td>
-                                        <td><span class="status-badge status-progress">In Progress</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2035</td>
-                                        <td>Riverview Co-Working</td>
-                                        <td>Installation</td>
-                                        <td><span class="status-badge status-queued">Queued</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2031</td>
-                                        <td>Harbor Dental Clinic</td>
-                                        <td>Gas Top-Up</td>
-                                        <td><span class="status-badge status-complete">Completed</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="card-stack">
+                            <div class="stack-card">
+                                <div>
+                                    <strong>Meridian Office Park</strong>
+                                    <p>Quarterly preventive maintenance for 32 indoor units.</p>
+                                </div>
+                                <span class="status-badge status-progress">Contract Active</span>
+                            </div>
+                            <div class="stack-card">
+                                <div>
+                                    <strong>Bloom Pediatric Center</strong>
+                                    <p>High-priority service account with same-day response terms.</p>
+                                </div>
+                                <span class="status-badge status-urgent">Priority</span>
+                            </div>
+                            <div class="stack-card">
+                                <div>
+                                    <strong>Casa Bayu Residence</strong>
+                                    <p>Renewal proposal prepared for multi-unit maintenance package.</p>
+                                </div>
+                                <span class="status-badge status-queued">Renewal Due</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-xl-5">
                     <div class="simple-panel h-100">
-                        <span class="section-label">Quick insights</span>
-                        <h2 class="panel-title">Today&apos;s Highlights</h2>
+                        <span class="section-label">Follow-up list</span>
+                        <h2 class="panel-title">Recent Customer Actions</h2>
                         <div class="info-list mt-3">
                             <div class="info-row">
                                 <div>
-                                    <strong>Response time</strong>
-                                    <p>Average dispatch in 28 minutes across all zones.</p>
+                                    <strong>Northpoint Suites</strong>
+                                    <p>Send maintenance summary and invoice pack.</p>
                                 </div>
-                                <span class="status-badge status-progress">Stable</span>
                             </div>
                             <div class="info-row">
                                 <div>
-                                    <strong>Pending invoices</strong>
-                                    <p>6 completed jobs still waiting for billing release.</p>
+                                    <strong>Pelita Food Hall</strong>
+                                    <p>Confirm next preventive maintenance slot for kitchen zone.</p>
                                 </div>
-                                <span class="status-badge status-queued">Review</span>
                             </div>
                             <div class="info-row">
                                 <div>
-                                    <strong>Contract renewals</strong>
-                                    <p>3 customers need follow-up before the end of the week.</p>
+                                    <strong>Harbor Dental Clinic</strong>
+                                    <p>Collect feedback after completed gas top-up service.</p>
                                 </div>
-                                <span class="status-badge status-urgent">Action</span>
                             </div>
                         </div>
                     </div>
