@@ -1,81 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoolOpz Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="assets/css/theme.css">
-</head>
-<body>
-    <div class="portal-layout">
-        <aside class="portal-sidebar">
-            <div>
-                <a class="sidebar-brand" href="index.html">
-                    <span class="brand-mark">CO</span>
-                    <span>
-                        <span class="brand-title d-block">CoolOpz Portal</span>
-                        <span class="brand-subtitle d-block">Aircond Service Management</span>
-                    </span>
-                </a>
+<?php
+$pageTitle = 'CoolOpz Portal | Dashboard';
+$activePage = 'dashboard';
+$sidebarLabel = 'Today';
+$sidebarMetric = '24 active jobs';
+$sidebarText = 'Separate pages for dashboard, operations, customers, and reporting.';
 
-                <nav class="sidebar-nav mt-4">
-                    <a class="sidebar-link active" href="index.html">
-                        <span class="sidebar-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 11.5 12 4l9 7.5"></path>
-                                <path d="M5 10.5V20h14v-9.5"></path>
-                            </svg>
-                        </span>
-                        <span>Dashboard</span>
-                    </a>
-                    <a class="sidebar-link" href="jobs.html">
-                        <span class="sidebar-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="4" y="5" width="16" height="14" rx="2"></rect>
-                                <path d="M8 9h8"></path>
-                                <path d="M8 13h8"></path>
-                            </svg>
-                        </span>
-                        <span>Jobs</span>
-                    </a>
-                    <a class="sidebar-link" href="customers.html">
-                        <span class="sidebar-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9.5" cy="7" r="3"></circle>
-                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 4.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                        </span>
-                        <span>Customers</span>
-                    </a>
-                    <a class="sidebar-link" href="reports.html">
-                        <span class="sidebar-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 19h16"></path>
-                                <path d="M7 16V9"></path>
-                                <path d="M12 16V5"></path>
-                                <path d="M17 16v-4"></path>
-                            </svg>
-                        </span>
-                        <span>Reports</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="simple-panel sidebar-card">
-                    <span class="section-label">Today</span>
-                    <h2 class="panel-title">24 active jobs</h2>
-                    <p>Separate pages for dashboard, operations, customers, and reporting.</p>
-                </div>
-            </div>
-        </aside>
-
+include __DIR__ . '/includes/head.php';
+include __DIR__ . '/includes/sidebar.php';
+?>
         <main class="portal-main">
             <section class="hero-section">
                 <div class="row align-items-center g-4">
@@ -84,8 +16,8 @@
                         <h1 class="hero-title">A clear daily view of aircond operations.</h1>
                         <p class="hero-copy">The dashboard now acts as the home page for CoolOpz Portal, while jobs, customers, and reports live on their own screens.</p>
                         <div class="d-flex flex-wrap gap-3">
-                            <a class="btn btn-portal-primary" href="jobs.html">View Jobs</a>
-                            <a class="btn btn-portal-secondary" href="customers.html">Open Customers</a>
+                            <a class="btn btn-portal-primary" href="jobs.php">View Jobs</a>
+                            <a class="btn btn-portal-secondary" href="customers.php">Open Customers</a>
                         </div>
                     </div>
                     <div class="col-xl-4">
@@ -133,7 +65,7 @@
                                 <span class="section-label">Priority queue</span>
                                 <h2 class="panel-title">Current Service Jobs</h2>
                             </div>
-                            <a class="btn btn-portal-secondary btn-sm" href="jobs.html">All Jobs</a>
+                            <a class="btn btn-portal-secondary btn-sm" href="jobs.php">All Jobs</a>
                         </div>
 
                         <div class="table-responsive">
@@ -208,8 +140,4 @@
                 </div>
             </section>
         </main>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-</body>
-</html>
+<?php include __DIR__ . '/includes/footer.php'; ?>
