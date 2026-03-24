@@ -6,259 +6,101 @@
     <title>CoolOpz Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/css/theme.css">
 </head>
 <body>
-    <div class="page-shell">
-        <nav class="navbar navbar-expand-lg topbar px-3 px-lg-4">
-            <a class="navbar-brand d-flex align-items-center gap-3" href="#">
-                <span class="brand-mark">CO</span>
-                <span>
-                    <span class="brand-title d-block">CoolOpz Portal</span>
-                    <span class="brand-subtitle d-block">Aircond Service Management System</span>
-                </span>
-            </a>
+    <div class="portal-layout">
+        <aside class="portal-sidebar">
+            <div>
+                <a class="sidebar-brand" href="#overview">
+                    <span class="brand-mark">CO</span>
+                    <span>
+                        <span class="brand-title d-block">CoolOpz Portal</span>
+                        <span class="brand-subtitle d-block">Aircond Service Management</span>
+                    </span>
+                </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNav" aria-controls="portalNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="portalNav">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                    <li class="nav-item"><a class="nav-link active" href="#overview">Overview</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#operations">Operations</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#service-board">Service Board</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#clients">Clients</a></li>
-                    <li class="nav-item ms-lg-3">
-                        <a class="btn btn-portal-primary" href="#service-board">Create Job</a>
-                    </li>
-                </ul>
+                <nav class="sidebar-nav mt-4">
+                    <a class="sidebar-link active" href="#overview">Overview</a>
+                    <a class="sidebar-link" href="#stats">Summary</a>
+                    <a class="sidebar-link" href="#jobs">Work Orders</a>
+                    <a class="sidebar-link" href="#request">New Request</a>
+                </nav>
             </div>
-        </nav>
 
-        <main class="container-fluid px-3 px-lg-4 pb-4">
-            <section class="hero-panel mb-4" id="overview">
-                <div class="row g-4 align-items-center">
-                    <div class="col-xl-7">
-                        <span class="eyebrow">Service control center</span>
-                        <h1 class="hero-title">Manage installations, maintenance visits, and emergency callouts from one clean operations view.</h1>
-                        <p class="hero-copy">This first layout direction for CoolOpz Portal combines a crisp blue-and-white palette with a clear dashboard structure for bookings, technician schedules, service alerts, and customer follow-up.</p>
-                        <div class="d-flex flex-wrap gap-3 hero-actions">
-                            <a class="btn btn-portal-primary btn-lg" href="#service-board">Open Service Board</a>
-                            <a class="btn btn-portal-secondary btn-lg" href="#operations">View Daily Ops</a>
-                        </div>
+            <div class="sidebar-footer">
+                <div class="simple-panel sidebar-card">
+                    <span class="section-label">Today</span>
+                    <h2 class="panel-title">24 active jobs</h2>
+                    <p>Clean sidebar navigation with a lighter dashboard structure.</p>
+                </div>
+            </div>
+        </aside>
 
-                        <div class="row g-3 mt-4">
-                            <div class="col-sm-4">
-                                <div class="metric-card metric-card-soft">
-                                    <span class="metric-label">Active Jobs</span>
-                                    <strong class="metric-value">42</strong>
-                                    <span class="metric-foot">9 in progress now</span>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="metric-card metric-card-soft">
-                                    <span class="metric-label">Technicians</span>
-                                    <strong class="metric-value">18</strong>
-                                    <span class="metric-foot">15 checked in</span>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="metric-card metric-card-soft">
-                                    <span class="metric-label">Response Time</span>
-                                    <strong class="metric-value">28m</strong>
-                                    <span class="metric-foot">Avg. dispatch speed</span>
-                                </div>
-                            </div>
+        <main class="portal-main">
+            <section class="hero-section" id="overview">
+                <div class="row align-items-center g-4">
+                    <div class="col-xl-8">
+                        <span class="section-label">Sidebar dashboard concept</span>
+                        <h1 class="hero-title">A simple left-menu layout for aircond service management.</h1>
+                        <p class="hero-copy">This version uses a fixed sidebar for navigation and keeps the main content focused on overview, work orders, and request intake.</p>
+                        <div class="d-flex flex-wrap gap-3">
+                            <a class="btn btn-portal-primary" href="#jobs">View Work Orders</a>
+                            <a class="btn btn-portal-secondary" href="#request">Create Request</a>
                         </div>
                     </div>
-
-                    <div class="col-xl-5">
-                        <div class="spotlight-card">
-                            <div class="spotlight-header d-flex justify-content-between align-items-start">
-                                <div>
-                                    <span class="panel-kicker">Today at a glance</span>
-                                    <h2 class="panel-title">Dispatch Priority Board</h2>
-                                </div>
-                                <span class="badge text-bg-light priority-live">Live</span>
-                            </div>
-
-                            <div class="priority-list">
-                                <article class="priority-item critical">
-                                    <div>
-                                        <span class="job-type">Emergency Repair</span>
-                                        <h3>Skyline Residence Tower B</h3>
-                                        <p>VRV cooling outage affecting level 12 and 13 units.</p>
-                                    </div>
-                                    <span class="job-time">09:30</span>
-                                </article>
-                                <article class="priority-item warning">
-                                    <div>
-                                        <span class="job-type">Preventive Maintenance</span>
-                                        <h3>Pelita Food Hall</h3>
-                                        <p>Filter cleaning and compressor inspection for 8 cassette units.</p>
-                                    </div>
-                                    <span class="job-time">11:00</span>
-                                </article>
-                                <article class="priority-item info">
-                                    <div>
-                                        <span class="job-type">New Installation</span>
-                                        <h3>Riverview Co-Working Suite</h3>
-                                        <p>Split-unit install with smart thermostat commissioning.</p>
-                                    </div>
-                                    <span class="job-time">14:30</span>
-                                </article>
-                            </div>
+                    <div class="col-xl-4">
+                        <div class="simple-panel hero-note">
+                            <span class="section-label">Operations snapshot</span>
+                            <ul class="snapshot-list">
+                                <li>7 technicians on-site</li>
+                                <li>3 urgent repairs waiting</li>
+                                <li>18 jobs completed today</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section class="row g-4 mb-4" id="operations">
-                <div class="col-12 col-xl-8">
-                    <div class="content-panel h-100">
-                        <div class="panel-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <div>
-                                <span class="panel-kicker">Operations snapshot</span>
-                                <h2 class="panel-title">Daily Workflow</h2>
-                            </div>
-                            <div class="chip-row">
-                                <span class="portal-chip active">All Zones</span>
-                                <span class="portal-chip">Kuala Lumpur</span>
-                                <span class="portal-chip">Shah Alam</span>
-                                <span class="portal-chip">Putrajaya</span>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-4">
-                                <div class="metric-card">
-                                    <span class="metric-label">Scheduled Visits</span>
-                                    <strong class="metric-value">26</strong>
-                                    <span class="trend up">+12% from yesterday</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="metric-card">
-                                    <span class="metric-label">Pending Quotes</span>
-                                    <strong class="metric-value">13</strong>
-                                    <span class="trend neutral">4 awaiting approval</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="metric-card">
-                                    <span class="metric-label">Completed Orders</span>
-                                    <strong class="metric-value">31</strong>
-                                    <span class="trend up">On track for target</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="schedule-strip mt-4">
-                            <div class="schedule-item">
-                                <span class="schedule-hour">08:00</span>
-                                <div>
-                                    <strong>Morning route briefing</strong>
-                                    <p>Technician vans allocated, parts inventory synced.</p>
-                                </div>
-                            </div>
-                            <div class="schedule-item">
-                                <span class="schedule-hour">10:15</span>
-                                <div>
-                                    <strong>Commercial site maintenance</strong>
-                                    <p>4 teams covering central business district clients.</p>
-                                </div>
-                            </div>
-                            <div class="schedule-item">
-                                <span class="schedule-hour">13:00</span>
-                                <div>
-                                    <strong>Emergency overflow window</strong>
-                                    <p>Reserve slots for urgent walk-in and hotline requests.</p>
-                                </div>
-                            </div>
-                            <div class="schedule-item">
-                                <span class="schedule-hour">16:30</span>
-                                <div>
-                                    <strong>Job closure and invoicing</strong>
-                                    <p>Capture signatures, upload photos, issue service reports.</p>
-                                </div>
-                            </div>
-                        </div>
+            <section class="row g-3 g-lg-4" id="stats">
+                <div class="col-md-4">
+                    <div class="simple-panel stat-card">
+                        <span class="stat-label">Active Jobs</span>
+                        <strong class="stat-value">24</strong>
+                        <p>Current jobs being handled today.</p>
                     </div>
                 </div>
-
-                <div class="col-12 col-xl-4">
-                    <div class="content-panel h-100">
-                        <div class="panel-header">
-                            <span class="panel-kicker">Team visibility</span>
-                            <h2 class="panel-title">Technician Status</h2>
-                        </div>
-
-                        <div class="tech-list">
-                            <div class="tech-row">
-                                <div class="tech-avatar">AR</div>
-                                <div class="flex-grow-1">
-                                    <strong>Azri Rahman</strong>
-                                    <p>On-site at Pelita Food Hall</p>
-                                </div>
-                                <span class="status-dot online">On Job</span>
-                            </div>
-                            <div class="tech-row">
-                                <div class="tech-avatar">NS</div>
-                                <div class="flex-grow-1">
-                                    <strong>Nadia Sofea</strong>
-                                    <p>Traveling to Skyline Residence</p>
-                                </div>
-                                <span class="status-dot transit">Transit</span>
-                            </div>
-                            <div class="tech-row">
-                                <div class="tech-avatar">HF</div>
-                                <div class="flex-grow-1">
-                                    <strong>Hakim Firdaus</strong>
-                                    <p>Warehouse parts pickup</p>
-                                </div>
-                                <span class="status-dot standby">Standby</span>
-                            </div>
-                            <div class="tech-row">
-                                <div class="tech-avatar">LM</div>
-                                <div class="flex-grow-1">
-                                    <strong>Liya Murni</strong>
-                                    <p>Completing residential deep cleaning</p>
-                                </div>
-                                <span class="status-dot online">On Job</span>
-                            </div>
-                        </div>
-
-                        <div class="mini-banner mt-4">
-                            <span class="panel-kicker">Service quality</span>
-                            <h3>96.4% customer satisfaction this month</h3>
-                            <p>High ratings driven by quicker response time and better maintenance reporting.</p>
-                        </div>
+                <div class="col-md-4">
+                    <div class="simple-panel stat-card">
+                        <span class="stat-label">Available Technicians</span>
+                        <strong class="stat-value">12</strong>
+                        <p>Ready for maintenance and emergency calls.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="simple-panel stat-card">
+                        <span class="stat-label">Completed Today</span>
+                        <strong class="stat-value">18</strong>
+                        <p>Jobs closed and ready for invoicing.</p>
                     </div>
                 </div>
             </section>
 
-            <section class="row g-4" id="service-board">
-                <div class="col-12 col-xl-7">
-                    <div class="content-panel h-100">
-                        <div class="panel-header d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <div>
-                                <span class="panel-kicker">Service execution</span>
-                                <h2 class="panel-title">Work Orders</h2>
-                            </div>
-                            <button class="btn btn-portal-secondary">Export Schedule</button>
-                        </div>
+            <section class="row g-4 mt-1">
+                <div class="col-xl-7" id="jobs">
+                    <div class="simple-panel h-100">
+                        <span class="section-label">Work orders</span>
+                        <h2 class="panel-title">Current Service Jobs</h2>
 
                         <div class="table-responsive mt-3">
-                            <table class="table portal-table align-middle">
+                            <table class="table portal-table align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th>Ticket</th>
                                         <th>Client</th>
-                                        <th>Service Type</th>
-                                        <th>Assigned Team</th>
+                                        <th>Type</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -266,30 +108,26 @@
                                     <tr>
                                         <td>#COP-2041</td>
                                         <td>Skyline Residence</td>
-                                        <td>Emergency Repair</td>
-                                        <td>Team Alpha</td>
-                                        <td><span class="table-badge urgent">Urgent</span></td>
+                                        <td>Repair</td>
+                                        <td><span class="status-badge status-urgent">Urgent</span></td>
                                     </tr>
                                     <tr>
                                         <td>#COP-2038</td>
                                         <td>Pelita Food Hall</td>
                                         <td>Maintenance</td>
-                                        <td>Team Delta</td>
-                                        <td><span class="table-badge progress">In Progress</span></td>
+                                        <td><span class="status-badge status-progress">In Progress</span></td>
                                     </tr>
                                     <tr>
                                         <td>#COP-2035</td>
                                         <td>Riverview Co-Working</td>
                                         <td>Installation</td>
-                                        <td>Team Sigma</td>
-                                        <td><span class="table-badge queued">Queued</span></td>
+                                        <td><span class="status-badge status-queued">Queued</span></td>
                                     </tr>
                                     <tr>
                                         <td>#COP-2031</td>
                                         <td>Harbor Dental Clinic</td>
                                         <td>Gas Top-Up</td>
-                                        <td>Team Nova</td>
-                                        <td><span class="table-badge complete">Completed</span></td>
+                                        <td><span class="status-badge status-complete">Completed</span></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -297,63 +135,32 @@
                     </div>
                 </div>
 
-                <div class="col-12 col-xl-5" id="clients">
-                    <div class="content-panel h-100">
-                        <div class="panel-header">
-                            <span class="panel-kicker">Client relationship</span>
-                            <h2 class="panel-title">Recent Accounts</h2>
-                        </div>
-
-                        <div class="client-stack mt-3">
-                            <article class="client-card">
-                                <div>
-                                    <strong>Meridian Office Park</strong>
-                                    <p>Quarterly preventive contract for 32 indoor units.</p>
-                                </div>
-                                <span class="table-badge progress">Contract Active</span>
-                            </article>
-                            <article class="client-card">
-                                <div>
-                                    <strong>Bloom Pediatric Center</strong>
-                                    <p>Urgent duct cleaning request submitted this morning.</p>
-                                </div>
-                                <span class="table-badge urgent">Needs Attention</span>
-                            </article>
-                            <article class="client-card">
-                                <div>
-                                    <strong>Casa Bayu Residence</strong>
-                                    <p>Multi-unit servicing package renewal due in 6 days.</p>
-                                </div>
-                                <span class="table-badge queued">Renewal Pending</span>
-                            </article>
-                        </div>
-
-                        <div class="form-panel mt-4">
-                            <span class="panel-kicker">Quick intake</span>
-                            <h3>Create service request</h3>
-                            <form class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Client Name</label>
-                                    <input type="text" class="form-control" placeholder="Enter client name">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Service Type</label>
-                                    <select class="form-select">
-                                        <option selected>Choose service</option>
-                                        <option>Maintenance</option>
-                                        <option>Repair</option>
-                                        <option>Installation</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Site Address</label>
-                                    <input type="text" class="form-control" placeholder="Enter service location">
-                                </div>
-                                <div class="col-12">
-                                    <button type="button" class="btn btn-portal-primary w-100">Submit Draft Request</button>
-                                </div>
-                            </form>
-                        </div>
+                <div class="col-xl-5" id="request">
+                    <div class="simple-panel h-100">
+                        <span class="section-label">Quick request</span>
+                        <h2 class="panel-title">Create Service Request</h2>
+                        <form class="row g-3 mt-1">
+                            <div class="col-12">
+                                <label class="form-label">Client Name</label>
+                                <input type="text" class="form-control" placeholder="Enter client name">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Service Type</label>
+                                <select class="form-select">
+                                    <option selected>Choose service</option>
+                                    <option>Maintenance</option>
+                                    <option>Repair</option>
+                                    <option>Installation</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" placeholder="Enter site address">
+                            </div>
+                            <div class="col-12">
+                                <button type="button" class="btn btn-portal-primary w-100">Submit Request</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </section>
