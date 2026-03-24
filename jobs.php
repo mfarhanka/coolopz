@@ -5,13 +5,129 @@ require_once __DIR__ . '/includes/data.php';
 coolopz_require_login();
 
 $currentUser = coolopz_current_user();
-$jobMetrics = coolopz_fetch_job_metrics();
-$jobs = coolopz_fetch_jobs();
 $pageTitle = 'CoolOpz Portal | Jobs';
 $activePage = 'jobs';
 $currentUserName = $currentUser['name'] ?? 'Admin User';
 $currentUserRole = $currentUser['role'] ?? 'Operations Admin';
 $userInitials = coolopz_user_initials($currentUserName);
+
+$serviceTypes = coolopz_job_service_types();
+$statuses = coolopz_job_statuses();
+$priorities = coolopz_job_priorities();
+
+$errorMessage = '';
+$messageKey = (string) ($_GET['message'] ?? '');
+$successMessage = match ($messageKey) {
+    'created' => 'Job created successfully.',
+    'updated' => 'Job updated successfully.',
+    'deleted' => 'Job deleted successfully.',
+    default => '',
+};
+
+$jobForm = [
+    'ticket_number' => '',
+    'customer_name' => '',
+    'service_type' => 'Maintenance',
+    'technician_team' => '',
+    'zone' => '',
+    'status' => 'Queued',
+    'priority_level' => 'Medium',
+    'billed_amount' => '0.00',
+    'notes' => '',
+];
+
+$editJobId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string) ($_POST['action'] ?? 'create');
+
+    if ($action === 'delete') {
+        $deleteJobId = (int) ($_POST['job_id'] ?? 0);
+
+        if ($deleteJobId < 1 || coolopz_find_job($deleteJobId) === null) {
+            $errorMessage = 'The selected job could not be found.';
+        } else {
+            coolopz_delete_job($deleteJobId);
+            header('Location: jobs.php?message=deleted');
+            exit;
+        }
+    } else {
+        $editJobId = $action === 'update' ? (int) ($_POST['job_id'] ?? 0) : 0;
+        $jobForm = [
+            'ticket_number' => trim((string) ($_POST['ticket_number'] ?? '')),
+            'customer_name' => trim((string) ($_POST['customer_name'] ?? '')),
+            'service_type' => trim((string) ($_POST['service_type'] ?? 'Maintenance')),
+            'technician_team' => trim((string) ($_POST['technician_team'] ?? '')),
+            'zone' => trim((string) ($_POST['zone'] ?? '')),
+            'status' => trim((string) ($_POST['status'] ?? 'Queued')),
+            'priority_level' => trim((string) ($_POST['priority_level'] ?? 'Medium')),
+            'billed_amount' => trim((string) ($_POST['billed_amount'] ?? '0.00')),
+            'notes' => trim((string) ($_POST['notes'] ?? '')),
+        ];
+
+        if (
+            $jobForm['ticket_number'] === ''
+            || $jobForm['customer_name'] === ''
+            || $jobForm['technician_team'] === ''
+            || $jobForm['zone'] === ''
+        ) {
+            $errorMessage = 'Ticket, customer, technician, and zone are required.';
+        } elseif (!in_array($jobForm['service_type'], $serviceTypes, true)) {
+            $errorMessage = 'Select a valid service type.';
+        } elseif (!in_array($jobForm['status'], $statuses, true)) {
+            $errorMessage = 'Select a valid job status.';
+        } elseif (!in_array($jobForm['priority_level'], $priorities, true)) {
+            $errorMessage = 'Select a valid priority level.';
+        } elseif (!is_numeric($jobForm['billed_amount']) || (float) $jobForm['billed_amount'] < 0) {
+            $errorMessage = 'Billed amount must be a valid positive number.';
+        } elseif ($action === 'update' && ($editJobId < 1 || coolopz_find_job($editJobId) === null)) {
+            $errorMessage = 'The job you are trying to update no longer exists.';
+        } else {
+            $jobPayload = $jobForm;
+            $jobPayload['billed_amount'] = number_format((float) $jobForm['billed_amount'], 2, '.', '');
+
+            try {
+                if ($action === 'update') {
+                    coolopz_update_job($editJobId, $jobPayload);
+                    header('Location: jobs.php?message=updated');
+                    exit;
+                }
+
+                coolopz_create_job($jobPayload);
+                header('Location: jobs.php?message=created');
+                exit;
+            } catch (PDOException $exception) {
+                $errorMessage = str_contains($exception->getMessage(), 'Duplicate')
+                    ? 'That ticket number already exists.'
+                    : 'Unable to save the job right now.';
+            }
+        }
+    }
+}
+
+if ($editJobId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $editingJob = coolopz_find_job($editJobId);
+
+    if ($editingJob === null) {
+        $errorMessage = 'The selected job could not be found.';
+        $editJobId = 0;
+    } else {
+        $jobForm = [
+            'ticket_number' => $editingJob['ticket_number'],
+            'customer_name' => $editingJob['customer_name'],
+            'service_type' => $editingJob['service_type'],
+            'technician_team' => $editingJob['technician_team'],
+            'zone' => $editingJob['zone'],
+            'status' => $editingJob['status'],
+            'priority_level' => $editingJob['priority_level'],
+            'billed_amount' => number_format((float) $editingJob['billed_amount'], 2, '.', ''),
+            'notes' => $editingJob['notes'],
+        ];
+    }
+}
+
+$jobMetrics = coolopz_fetch_job_metrics();
+$jobs = coolopz_fetch_jobs();
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
@@ -20,7 +136,7 @@ include __DIR__ . '/includes/sidebar.php';
 <?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Jobs</span>
-                <p class="hero-copy">Keep this page focused on ticket flow, technician assignment, and the jobs that still need attention.</p>
+                <p class="hero-copy">Create, update, and close service jobs without leaving the operations board.</p>
             </section>
             <section class="row g-3 g-lg-4">
                 <div class="col-md-4">
@@ -46,14 +162,97 @@ include __DIR__ . '/includes/sidebar.php';
                 </div>
             </section>
             <section class="row g-4 mt-1">
-                <div class="col-12">
-                    <div class="simple-panel">
+                <div class="col-xl-5">
+                    <div class="simple-panel h-100">
+                        <div class="panel-head mb-3">
+                            <div>
+                                <span class="section-label"><?= $editJobId > 0 ? 'Edit job' : 'Create job' ?></span>
+                                <h2 class="panel-title"><?= $editJobId > 0 ? 'Update Job' : 'Add New Job' ?></h2>
+                            </div>
+<?php if ($editJobId > 0): ?>
+                            <a class="btn btn-portal-secondary btn-sm" href="jobs.php">Cancel</a>
+<?php endif; ?>
+                        </div>
+
+<?php if ($errorMessage !== ''): ?>
+                        <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+<?php if ($successMessage !== ''): ?>
+                        <div class="form-success" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+                        <form method="post" class="row g-3">
+                            <input type="hidden" name="action" value="<?= $editJobId > 0 ? 'update' : 'create' ?>">
+<?php if ($editJobId > 0): ?>
+                            <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $editJobId, ENT_QUOTES, 'UTF-8') ?>">
+<?php endif; ?>
+                            <div class="col-md-6">
+                                <label class="form-label" for="ticket_number">Ticket Number</label>
+                                <input class="form-control" id="ticket_number" name="ticket_number" type="text" value="<?= htmlspecialchars($jobForm['ticket_number'], ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="customer_name">Customer</label>
+                                <input class="form-control" id="customer_name" name="customer_name" type="text" value="<?= htmlspecialchars($jobForm['customer_name'], ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="service_type">Service Type</label>
+                                <select class="form-select" id="service_type" name="service_type">
+<?php foreach ($serviceTypes as $serviceType): ?>
+                                    <option value="<?= htmlspecialchars($serviceType, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['service_type'] === $serviceType ? ' selected' : '' ?>><?= htmlspecialchars($serviceType, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="technician_team">Technician</label>
+                                <input class="form-control" id="technician_team" name="technician_team" type="text" value="<?= htmlspecialchars($jobForm['technician_team'], ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="zone">Zone</label>
+                                <input class="form-control" id="zone" name="zone" type="text" value="<?= htmlspecialchars($jobForm['zone'], ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="billed_amount">Billed Amount</label>
+                                <input class="form-control" id="billed_amount" name="billed_amount" type="number" min="0" step="0.01" value="<?= htmlspecialchars((string) $jobForm['billed_amount'], ENT_QUOTES, 'UTF-8') ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="status">Status</label>
+                                <select class="form-select" id="status" name="status">
+<?php foreach ($statuses as $status): ?>
+                                    <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['status'] === $status ? ' selected' : '' ?>><?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="priority_level">Priority</label>
+                                <select class="form-select" id="priority_level" name="priority_level">
+<?php foreach ($priorities as $priority): ?>
+                                    <option value="<?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['priority_level'] === $priority ? ' selected' : '' ?>><?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="notes">Notes</label>
+                                <textarea class="form-control notes-field" id="notes" name="notes" rows="4"><?= htmlspecialchars($jobForm['notes'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                            </div>
+                            <div class="col-12 jobs-form-actions">
+                                <button type="submit" class="btn btn-portal-primary"><?= $editJobId > 0 ? 'Save Changes' : 'Create Job' ?></button>
+<?php if ($editJobId > 0): ?>
+                                <a class="btn btn-portal-secondary" href="jobs.php">Back to List</a>
+<?php endif; ?>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-xl-7">
+                    <div class="simple-panel h-100">
                         <div class="panel-head mb-3">
                             <div>
                                 <span class="section-label">Service board</span>
-                                <h2 class="panel-title">Active Job List</h2>
+                                <h2 class="panel-title">Manage Jobs</h2>
                             </div>
-                            <span class="subtle-note">Updated 10:24 AM</span>
+                            <span class="subtle-note"><?= htmlspecialchars((string) count($jobs), ENT_QUOTES, 'UTF-8') ?> listed</span>
                         </div>
 
                         <div class="table-responsive">
@@ -62,9 +261,11 @@ include __DIR__ . '/includes/sidebar.php';
                                     <tr>
                                         <th>Ticket</th>
                                         <th>Client</th>
+                                        <th>Service</th>
                                         <th>Technician</th>
-                                        <th>Zone</th>
                                         <th>Status</th>
+                                        <th>Priority</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -72,11 +273,30 @@ include __DIR__ . '/includes/sidebar.php';
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars($job['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <strong class="d-block"><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <span class="subtle-note"><?= htmlspecialchars($job['zone'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
                                         <td><?= htmlspecialchars($job['technician_team'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($job['zone'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><span class="status-badge <?= coolopz_status_badge_class($job['status']) ?>"><?= htmlspecialchars($job['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+                                        <td><?= htmlspecialchars($job['priority_level'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <div class="jobs-actions">
+                                                <a class="btn btn-portal-secondary btn-sm" href="jobs.php?edit=<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
+                                                <form method="post" class="m-0" onsubmit="return confirm('Delete this job?');">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                                </form>
+                                            </div>
+                                        </td>
                                     </tr>
 <?php endforeach; ?>
+<?php if ($jobs === []): ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">No jobs available yet.</td>
+                                    </tr>
+<?php endif; ?>
                                 </tbody>
                             </table>
                         </div>

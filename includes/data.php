@@ -51,9 +51,113 @@ function coolopz_fetch_job_metrics(): array
     ];
 }
 
+function coolopz_job_service_types(): array
+{
+    return [
+        'Maintenance',
+        'Preventive Maintenance',
+        'Repair',
+        'Installation',
+        'Gas Top-Up',
+        'Inspection',
+    ];
+}
+
+function coolopz_job_statuses(): array
+{
+    return [
+        'Queued',
+        'In Progress',
+        'Urgent',
+        'Completed',
+    ];
+}
+
+function coolopz_job_priorities(): array
+{
+    return [
+        'Low',
+        'Medium',
+        'High',
+    ];
+}
+
 function coolopz_fetch_jobs(): array
 {
-    return coolopz_fetch_priority_jobs(10);
+    $statement = coolopz_db()->query(
+        "SELECT id, ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes, created_at
+         FROM jobs
+         ORDER BY FIELD(status, 'Urgent', 'In Progress', 'Queued', 'Completed'), id DESC"
+    );
+
+    return $statement->fetchAll();
+}
+
+function coolopz_find_job(int $jobId): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id, ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes FROM jobs WHERE id = :id LIMIT 1'
+    );
+    $statement->execute(['id' => $jobId]);
+    $job = $statement->fetch();
+
+    return $job === false ? null : $job;
+}
+
+function coolopz_create_job(array $jobData): void
+{
+    $statement = coolopz_db()->prepare(
+        'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes)
+         VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :zone, :status, :priority_level, :billed_amount, :notes)'
+    );
+
+    $statement->execute([
+        'ticket_number' => $jobData['ticket_number'],
+        'customer_name' => $jobData['customer_name'],
+        'service_type' => $jobData['service_type'],
+        'technician_team' => $jobData['technician_team'],
+        'zone' => $jobData['zone'],
+        'status' => $jobData['status'],
+        'priority_level' => $jobData['priority_level'],
+        'billed_amount' => $jobData['billed_amount'],
+        'notes' => $jobData['notes'],
+    ]);
+}
+
+function coolopz_update_job(int $jobId, array $jobData): void
+{
+    $statement = coolopz_db()->prepare(
+        'UPDATE jobs
+         SET ticket_number = :ticket_number,
+             customer_name = :customer_name,
+             service_type = :service_type,
+             technician_team = :technician_team,
+             zone = :zone,
+             status = :status,
+             priority_level = :priority_level,
+             billed_amount = :billed_amount,
+             notes = :notes
+         WHERE id = :id'
+    );
+
+    $statement->execute([
+        'id' => $jobId,
+        'ticket_number' => $jobData['ticket_number'],
+        'customer_name' => $jobData['customer_name'],
+        'service_type' => $jobData['service_type'],
+        'technician_team' => $jobData['technician_team'],
+        'zone' => $jobData['zone'],
+        'status' => $jobData['status'],
+        'priority_level' => $jobData['priority_level'],
+        'billed_amount' => $jobData['billed_amount'],
+        'notes' => $jobData['notes'],
+    ]);
+}
+
+function coolopz_delete_job(int $jobId): void
+{
+    $statement = coolopz_db()->prepare('DELETE FROM jobs WHERE id = :id');
+    $statement->execute(['id' => $jobId]);
 }
 
 function coolopz_fetch_customer_metrics(): array
