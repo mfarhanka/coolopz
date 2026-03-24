@@ -52,7 +52,7 @@ $navItems = [
 
                     <nav class="sidebar-nav mt-4 mt-lg-4">
 <?php foreach ($navItems as $item): ?>
-                    <a class="sidebar-link<?= $activePage === $item['key'] ? ' active' : '' ?>" href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>" data-bs-dismiss="offcanvas" data-bs-target="#portalSidebar">
+                    <a class="sidebar-link<?= $activePage === $item['key'] ? ' active' : '' ?>" href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>">
                         <span class="sidebar-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <?= $item['icon'] ?>
