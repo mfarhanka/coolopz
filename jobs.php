@@ -12,7 +12,6 @@ include __DIR__ . '/includes/sidebar.php';
 <?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Jobs</span>
-                <h1 class="hero-title">Manage service jobs by status and priority.</h1>
                 <p class="hero-copy">Keep this page focused on ticket flow, technician assignment, and the jobs that still need attention.</p>
             </section>
             <section class="row g-4 mt-1">

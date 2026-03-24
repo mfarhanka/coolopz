@@ -12,7 +12,6 @@ include __DIR__ . '/includes/sidebar.php';
 <?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Dashboard</span>
-                <h1 class="hero-title">A clear daily view of aircond operations.</h1>
                 <p class="hero-copy">Keep the dashboard focused on the essentials: daily job count, team availability, and the current priority list.</p>
             </section>
 

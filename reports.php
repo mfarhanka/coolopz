@@ -12,7 +12,6 @@ include __DIR__ . '/includes/sidebar.php';
 <?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Reports</span>
-                <h1 class="hero-title">Track operational performance at a glance.</h1>
                 <p class="hero-copy">Keep reporting simple with the main KPIs and a single service mix summary.</p>
             </section>
 

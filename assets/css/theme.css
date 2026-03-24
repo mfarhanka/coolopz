@@ -248,7 +248,7 @@ body {
 }
 
 .hero-section {
-    padding-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
 }
 
 .section-label {
@@ -259,14 +259,6 @@ body {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-}
-
-.hero-title {
-    font-size: clamp(2.2rem, 4vw, 3.6rem);
-    line-height: 1.08;
-    font-weight: 700;
-    color: var(--portal-blue-dark);
-    max-width: 12ch;
 }
 
 .simple-panel {
@@ -439,9 +431,6 @@ body {
         border-bottom: 1px solid var(--portal-sidebar-line);
     }
 
-    .hero-title {
-        max-width: none;
-    }
 }
 
 @media (max-width: 767.98px) {

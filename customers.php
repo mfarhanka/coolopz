@@ -12,7 +12,6 @@ include __DIR__ . '/includes/sidebar.php';
 <?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Customers</span>
-                <h1 class="hero-title">Keep customer accounts and contracts organized.</h1>
                 <p class="hero-copy">Use this page for the active customer list and simple renewal tracking.</p>
             </section>
 
