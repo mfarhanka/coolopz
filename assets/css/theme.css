@@ -143,8 +143,8 @@ body {
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding: 1rem 1.25rem;
-    background: var(--portal-white);
-    border: 1px solid var(--portal-border);
+    background: linear-gradient(180deg, var(--portal-sidebar) 0%, var(--portal-sidebar-deep) 100%);
+    border: 1px solid var(--portal-sidebar-line);
     border-radius: 18px;
 }
 
@@ -155,12 +155,12 @@ body {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--portal-blue);
+    color: rgba(255, 255, 255, 0.72);
 }
 
 .topbar-copy {
     margin: 0;
-    color: var(--portal-muted);
+    color: rgba(255, 255, 255, 0.82);
 }
 
 .topbar-actions {
@@ -175,8 +175,8 @@ body {
     gap: 0.8rem;
     padding: 0.45rem 0.7rem;
     border-radius: 14px;
-    background: #fbfdff;
-    border: 1px solid var(--portal-border);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .user-avatar {
@@ -186,20 +186,33 @@ body {
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 12px;
-    background: var(--portal-blue-soft);
-    color: var(--portal-blue-dark);
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--portal-white);
     font-weight: 700;
 }
 
 .user-chip strong {
     display: block;
     font-size: 0.95rem;
-    color: var(--portal-text);
+    color: var(--portal-white);
 }
 
 .user-chip span:last-child {
     font-size: 0.82rem;
-    color: var(--portal-muted);
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.portal-topbar .btn-portal-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--portal-white);
+}
+
+.portal-topbar .btn-portal-secondary:hover,
+.portal-topbar .btn-portal-secondary:focus {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: var(--portal-white);
 }
 
 .btn-portal-primary,
