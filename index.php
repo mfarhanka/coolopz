@@ -1,11 +1,15 @@
 <?php
 $pageTitle = 'CoolOpz Portal | Dashboard';
 $activePage = 'dashboard';
+$currentUserName = 'Admin User';
+$currentUserRole = 'Operations Admin';
+$userInitials = 'AU';
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
 ?>
         <main class="portal-main">
+<?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Dashboard</span>
                 <h1 class="hero-title">A clear daily view of aircond operations.</h1>

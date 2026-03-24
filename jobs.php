@@ -1,11 +1,15 @@
 <?php
 $pageTitle = 'CoolOpz Portal | Jobs';
 $activePage = 'jobs';
+$currentUserName = 'Admin User';
+$currentUserRole = 'Operations Admin';
+$userInitials = 'AU';
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
 ?>
         <main class="portal-main">
+<?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Jobs</span>
                 <h1 class="hero-title">Manage service jobs by status and priority.</h1>

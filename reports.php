@@ -1,11 +1,15 @@
 <?php
 $pageTitle = 'CoolOpz Portal | Reports';
 $activePage = 'reports';
+$currentUserName = 'Admin User';
+$currentUserRole = 'Operations Admin';
+$userInitials = 'AU';
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
 ?>
         <main class="portal-main">
+<?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Reports</span>
                 <h1 class="hero-title">Track operational performance at a glance.</h1>

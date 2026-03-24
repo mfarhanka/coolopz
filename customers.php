@@ -1,11 +1,15 @@
 <?php
 $pageTitle = 'CoolOpz Portal | Customers';
 $activePage = 'customers';
+$currentUserName = 'Admin User';
+$currentUserRole = 'Operations Admin';
+$userInitials = 'AU';
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
 ?>
         <main class="portal-main">
+<?php include __DIR__ . '/includes/topbar.php'; ?>
             <section class="hero-section">
                 <span class="section-label">Customers</span>
                 <h1 class="hero-title">Keep customer accounts and contracts organized.</h1>
