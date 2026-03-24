@@ -87,6 +87,9 @@ body {
 }
 
 .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
     padding: 0.9rem 1rem;
     border-radius: 12px;
     color: var(--portal-sidebar-text);
@@ -95,12 +98,34 @@ body {
     border: 1px solid transparent;
 }
 
+.sidebar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.sidebar-icon svg {
+    width: 1rem;
+    height: 1rem;
+}
+
 .sidebar-link:hover,
 .sidebar-link:focus,
 .sidebar-link.active {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.14);
     color: var(--portal-white);
+}
+
+.sidebar-link:hover .sidebar-icon,
+.sidebar-link:focus .sidebar-icon,
+.sidebar-link.active .sidebar-icon {
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .portal-main {
