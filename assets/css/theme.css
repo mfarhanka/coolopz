@@ -572,6 +572,16 @@ body {
     font-weight: 500;
 }
 
+.form-success {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    background: #ebfaf3;
+    border: 1px solid #bdeacf;
+    color: #1c8b5f;
+    font-weight: 500;
+}
+
 .form-label {
     font-weight: 500;
 }

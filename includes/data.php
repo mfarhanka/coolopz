@@ -125,3 +125,37 @@ function coolopz_fetch_service_breakdown(): array
         ['service_type' => 'No Data', 'percentage' => 0],
     ];
 }
+
+function coolopz_fetch_staff_metrics(): array
+{
+    $pdo = coolopz_db();
+
+    return [
+        'total_users' => (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn(),
+        'admins' => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role_name = 'Operations Admin'")->fetchColumn(),
+        'staff' => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role_name <> 'Operations Admin'")->fetchColumn(),
+    ];
+}
+
+function coolopz_fetch_staff_users(): array
+{
+    $statement = coolopz_db()->query(
+        'SELECT full_name, email, role_name, created_at FROM users ORDER BY created_at DESC, id DESC'
+    );
+
+    return $statement->fetchAll();
+}
+
+function coolopz_create_staff_user(string $fullName, string $email, string $roleName, string $password): void
+{
+    $statement = coolopz_db()->prepare(
+        'INSERT INTO users (email, full_name, role_name, password_hash) VALUES (:email, :full_name, :role_name, :password_hash)'
+    );
+
+    $statement->execute([
+        'email' => $email,
+        'full_name' => $fullName,
+        'role_name' => $roleName,
+        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+    ]);
+}

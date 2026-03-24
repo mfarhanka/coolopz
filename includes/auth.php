@@ -58,7 +58,7 @@ function coolopz_user_initials(string $name): string
 
 function coolopz_allowed_routes(): array
 {
-    return ['index.php', 'jobs.php', 'customers.php', 'reports.php'];
+    return ['index.php', 'jobs.php', 'customers.php', 'reports.php', 'staff.php'];
 }
 
 function coolopz_normalize_redirect(?string $target): string
@@ -110,5 +110,21 @@ function coolopz_require_login(): void
 
     $currentPage = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     header('Location: login.php?redirect=' . urlencode(coolopz_normalize_redirect($currentPage)));
+    exit;
+}
+
+function coolopz_require_role(array $roles): void
+{
+    coolopz_require_login();
+
+    $currentUser = coolopz_current_user();
+    $currentRole = $currentUser['role'] ?? '';
+
+    if (in_array($currentRole, $roles, true)) {
+        return;
+    }
+
+    http_response_code(403);
+    echo 'Forbidden';
     exit;
 }

@@ -26,6 +26,12 @@ $navItems = [
         'label' => 'Reports',
         'icon' => '<path d="M4 19h16"></path><path d="M7 16V9"></path><path d="M12 16V5"></path><path d="M17 16v-4"></path>',
     ],
+    [
+        'key' => 'staff',
+        'href' => 'staff.php',
+        'label' => 'Staff',
+        'icon' => '<path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="3"></circle><path d="M20 8v6"></path><path d="M17 11h6"></path>',
+    ],
 ];
 ?>
         <aside class="portal-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="portalSidebar" aria-labelledby="portalSidebarLabel">
