@@ -23,6 +23,7 @@ $successMessage = match ($messageKey) {
     'deleted' => 'Job deleted successfully.',
     default => '',
 };
+$shouldOpenJobModal = false;
 
 $jobForm = [
     'ticket_number' => '',
@@ -46,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($deleteJobId < 1 || coolopz_find_job($deleteJobId) === null) {
             $errorMessage = 'The selected job could not be found.';
+            $shouldOpenJobModal = false;
         } else {
             coolopz_delete_job($deleteJobId);
             header('Location: jobs.php?message=deleted');
@@ -72,16 +74,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             || $jobForm['zone'] === ''
         ) {
             $errorMessage = 'Ticket, customer, technician, and zone are required.';
+            $shouldOpenJobModal = true;
         } elseif (!in_array($jobForm['service_type'], $serviceTypes, true)) {
             $errorMessage = 'Select a valid service type.';
+            $shouldOpenJobModal = true;
         } elseif (!in_array($jobForm['status'], $statuses, true)) {
             $errorMessage = 'Select a valid job status.';
+            $shouldOpenJobModal = true;
         } elseif (!in_array($jobForm['priority_level'], $priorities, true)) {
             $errorMessage = 'Select a valid priority level.';
+            $shouldOpenJobModal = true;
         } elseif (!is_numeric($jobForm['billed_amount']) || (float) $jobForm['billed_amount'] < 0) {
             $errorMessage = 'Billed amount must be a valid positive number.';
+            $shouldOpenJobModal = true;
         } elseif ($action === 'update' && ($editJobId < 1 || coolopz_find_job($editJobId) === null)) {
             $errorMessage = 'The job you are trying to update no longer exists.';
+            $shouldOpenJobModal = true;
         } else {
             $jobPayload = $jobForm;
             $jobPayload['billed_amount'] = number_format((float) $jobForm['billed_amount'], 2, '.', '');
@@ -100,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errorMessage = str_contains($exception->getMessage(), 'Duplicate')
                     ? 'That ticket number already exists.'
                     : 'Unable to save the job right now.';
+                $shouldOpenJobModal = true;
             }
         }
     }
@@ -112,6 +121,7 @@ if ($editJobId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
         $errorMessage = 'The selected job could not be found.';
         $editJobId = 0;
     } else {
+        $shouldOpenJobModal = true;
         $jobForm = [
             'ticket_number' => $editingJob['ticket_number'],
             'customer_name' => $editingJob['customer_name'],
@@ -162,98 +172,26 @@ include __DIR__ . '/includes/sidebar.php';
                 </div>
             </section>
             <section class="row g-4 mt-1">
-                <div class="col-xl-5">
-                    <div class="simple-panel h-100">
-                        <div class="panel-head mb-3">
-                            <div>
-                                <span class="section-label"><?= $editJobId > 0 ? 'Edit job' : 'Create job' ?></span>
-                                <h2 class="panel-title"><?= $editJobId > 0 ? 'Update Job' : 'Add New Job' ?></h2>
-                            </div>
-<?php if ($editJobId > 0): ?>
-                            <a class="btn btn-portal-secondary btn-sm" href="jobs.php">Cancel</a>
-<?php endif; ?>
-                        </div>
-
-<?php if ($errorMessage !== ''): ?>
-                        <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
-
-<?php if ($successMessage !== ''): ?>
-                        <div class="form-success" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
-
-                        <form method="post" class="row g-3">
-                            <input type="hidden" name="action" value="<?= $editJobId > 0 ? 'update' : 'create' ?>">
-<?php if ($editJobId > 0): ?>
-                            <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $editJobId, ENT_QUOTES, 'UTF-8') ?>">
-<?php endif; ?>
-                            <div class="col-md-6">
-                                <label class="form-label" for="ticket_number">Ticket Number</label>
-                                <input class="form-control" id="ticket_number" name="ticket_number" type="text" value="<?= htmlspecialchars($jobForm['ticket_number'], ENT_QUOTES, 'UTF-8') ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="customer_name">Customer</label>
-                                <input class="form-control" id="customer_name" name="customer_name" type="text" value="<?= htmlspecialchars($jobForm['customer_name'], ENT_QUOTES, 'UTF-8') ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="service_type">Service Type</label>
-                                <select class="form-select" id="service_type" name="service_type">
-<?php foreach ($serviceTypes as $serviceType): ?>
-                                    <option value="<?= htmlspecialchars($serviceType, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['service_type'] === $serviceType ? ' selected' : '' ?>><?= htmlspecialchars($serviceType, ENT_QUOTES, 'UTF-8') ?></option>
-<?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="technician_team">Technician</label>
-                                <input class="form-control" id="technician_team" name="technician_team" type="text" value="<?= htmlspecialchars($jobForm['technician_team'], ENT_QUOTES, 'UTF-8') ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="zone">Zone</label>
-                                <input class="form-control" id="zone" name="zone" type="text" value="<?= htmlspecialchars($jobForm['zone'], ENT_QUOTES, 'UTF-8') ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="billed_amount">Billed Amount</label>
-                                <input class="form-control" id="billed_amount" name="billed_amount" type="number" min="0" step="0.01" value="<?= htmlspecialchars((string) $jobForm['billed_amount'], ENT_QUOTES, 'UTF-8') ?>">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="status">Status</label>
-                                <select class="form-select" id="status" name="status">
-<?php foreach ($statuses as $status): ?>
-                                    <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['status'] === $status ? ' selected' : '' ?>><?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?></option>
-<?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="priority_level">Priority</label>
-                                <select class="form-select" id="priority_level" name="priority_level">
-<?php foreach ($priorities as $priority): ?>
-                                    <option value="<?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['priority_level'] === $priority ? ' selected' : '' ?>><?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?></option>
-<?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label" for="notes">Notes</label>
-                                <textarea class="form-control notes-field" id="notes" name="notes" rows="4"><?= htmlspecialchars($jobForm['notes'], ENT_QUOTES, 'UTF-8') ?></textarea>
-                            </div>
-                            <div class="col-12 jobs-form-actions">
-                                <button type="submit" class="btn btn-portal-primary"><?= $editJobId > 0 ? 'Save Changes' : 'Create Job' ?></button>
-<?php if ($editJobId > 0): ?>
-                                <a class="btn btn-portal-secondary" href="jobs.php">Back to List</a>
-<?php endif; ?>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="col-xl-7">
+                <div class="col-12">
                     <div class="simple-panel h-100">
                         <div class="panel-head mb-3">
                             <div>
                                 <span class="section-label">Service board</span>
                                 <h2 class="panel-title">Manage Jobs</h2>
                             </div>
-                            <span class="subtle-note"><?= htmlspecialchars((string) count($jobs), ENT_QUOTES, 'UTF-8') ?> listed</span>
+                            <div class="jobs-actions">
+                                <span class="subtle-note"><?= htmlspecialchars((string) count($jobs), ENT_QUOTES, 'UTF-8') ?> listed</span>
+                                <button type="button" class="btn btn-portal-primary btn-sm" data-bs-toggle="modal" data-bs-target="#jobModal">Add Job</button>
+                            </div>
                         </div>
+
+<?php if ($errorMessage !== ''): ?>
+                        <div class="login-alert mb-3" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+<?php if ($successMessage !== ''): ?>
+                        <div class="form-success mb-3" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
 
                         <div class="table-responsive">
                             <table class="table portal-table align-middle mb-0">
@@ -303,5 +241,96 @@ include __DIR__ . '/includes/sidebar.php';
                     </div>
                 </div>
             </section>
+
+            <div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div>
+                                <span class="section-label mb-2"><?= $editJobId > 0 ? 'Edit job' : 'Create job' ?></span>
+                                <h2 class="panel-title" id="jobModalLabel"><?= $editJobId > 0 ? 'Update Job' : 'Add New Job' ?></h2>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+<?php if ($errorMessage !== ''): ?>
+                            <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+                            <form method="post" class="row g-3">
+                                <input type="hidden" name="action" value="<?= $editJobId > 0 ? 'update' : 'create' ?>">
+<?php if ($editJobId > 0): ?>
+                                <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $editJobId, ENT_QUOTES, 'UTF-8') ?>">
+<?php endif; ?>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="ticket_number">Ticket Number</label>
+                                    <input class="form-control" id="ticket_number" name="ticket_number" type="text" value="<?= htmlspecialchars($jobForm['ticket_number'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="customer_name">Customer</label>
+                                    <input class="form-control" id="customer_name" name="customer_name" type="text" value="<?= htmlspecialchars($jobForm['customer_name'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="service_type">Service Type</label>
+                                    <select class="form-select" id="service_type" name="service_type">
+<?php foreach ($serviceTypes as $serviceType): ?>
+                                        <option value="<?= htmlspecialchars($serviceType, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['service_type'] === $serviceType ? ' selected' : '' ?>><?= htmlspecialchars($serviceType, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="technician_team">Technician</label>
+                                    <input class="form-control" id="technician_team" name="technician_team" type="text" value="<?= htmlspecialchars($jobForm['technician_team'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="zone">Zone</label>
+                                    <input class="form-control" id="zone" name="zone" type="text" value="<?= htmlspecialchars($jobForm['zone'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="billed_amount">Billed Amount</label>
+                                    <input class="form-control" id="billed_amount" name="billed_amount" type="number" min="0" step="0.01" value="<?= htmlspecialchars((string) $jobForm['billed_amount'], ENT_QUOTES, 'UTF-8') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="status">Status</label>
+                                    <select class="form-select" id="status" name="status">
+<?php foreach ($statuses as $status): ?>
+                                        <option value="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['status'] === $status ? ' selected' : '' ?>><?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="priority_level">Priority</label>
+                                    <select class="form-select" id="priority_level" name="priority_level">
+<?php foreach ($priorities as $priority): ?>
+                                        <option value="<?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['priority_level'] === $priority ? ' selected' : '' ?>><?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="notes">Notes</label>
+                                    <textarea class="form-control notes-field" id="notes" name="notes" rows="4"><?= htmlspecialchars($jobForm['notes'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                                </div>
+                                <div class="col-12 jobs-form-actions">
+                                    <button type="submit" class="btn btn-portal-primary"><?= $editJobId > 0 ? 'Save Changes' : 'Create Job' ?></button>
+                                    <a class="btn btn-portal-secondary" href="jobs.php">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
+<?php if ($shouldOpenJobModal): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modalElement = document.getElementById('jobModal');
+    if (!modalElement) {
+        return;
+    }
+
+    var jobModal = new bootstrap.Modal(modalElement);
+    jobModal.show();
+});
+</script>
+<?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
