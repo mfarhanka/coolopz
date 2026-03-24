@@ -1,0 +1,127 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/database.php';
+
+function coolopz_status_badge_class(string $status): string
+{
+    return match ($status) {
+        'Urgent', 'Priority' => 'status-urgent',
+        'In Progress', 'Contract Active' => 'status-progress',
+        'Queued', 'Renewal Due', 'Review' => 'status-queued',
+        'Completed' => 'status-complete',
+        default => 'status-queued',
+    };
+}
+
+function coolopz_fetch_dashboard_metrics(): array
+{
+    $pdo = coolopz_db();
+
+    return [
+        'active_jobs' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status IN ('Urgent', 'In Progress', 'Queued')")->fetchColumn(),
+        'available_technicians' => (int) $pdo->query("SELECT COUNT(DISTINCT technician_team) FROM jobs WHERE status IN ('Urgent', 'In Progress', 'Queued')")->fetchColumn(),
+        'completed_today' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'Completed'")->fetchColumn(),
+    ];
+}
+
+function coolopz_fetch_priority_jobs(int $limit = 4): array
+{
+    $pdo = coolopz_db();
+    $statement = $pdo->prepare(
+        "SELECT ticket_number, customer_name, service_type, technician_team, zone, status, priority_level
+         FROM jobs
+         ORDER BY FIELD(status, 'Urgent', 'In Progress', 'Queued', 'Completed'), id DESC
+         LIMIT :limit"
+    );
+    $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $statement->execute();
+
+    return $statement->fetchAll();
+}
+
+function coolopz_fetch_job_metrics(): array
+{
+    $pdo = coolopz_db();
+
+    return [
+        'open_tickets' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status <> 'Completed'")->fetchColumn(),
+        'on_site' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status IN ('Urgent', 'In Progress')")->fetchColumn(),
+        'awaiting_parts' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE notes LIKE '%parts%'")->fetchColumn(),
+    ];
+}
+
+function coolopz_fetch_jobs(): array
+{
+    return coolopz_fetch_priority_jobs(10);
+}
+
+function coolopz_fetch_customer_metrics(): array
+{
+    $pdo = coolopz_db();
+
+    return [
+        'commercial' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE customer_type = 'Commercial'")->fetchColumn(),
+        'residential' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE customer_type = 'Residential'")->fetchColumn(),
+        'renewals_pending' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE renewal_status = 'Renewal Due'")->fetchColumn(),
+        'total' => (int) $pdo->query('SELECT COUNT(*) FROM customers')->fetchColumn(),
+    ];
+}
+
+function coolopz_fetch_customers(): array
+{
+    $pdo = coolopz_db();
+    $statement = $pdo->query(
+        "SELECT name, customer_type, notes, renewal_status
+         FROM customers
+         ORDER BY FIELD(renewal_status, 'Priority', 'Renewal Due', 'Contract Active'), id DESC"
+    );
+
+    return $statement->fetchAll();
+}
+
+function coolopz_fetch_report_metrics(): array
+{
+    $pdo = coolopz_db();
+
+    $monthlyRevenue = (float) $pdo->query('SELECT COALESCE(SUM(billed_amount), 0) FROM jobs')->fetchColumn();
+    $totalJobs = max((int) $pdo->query('SELECT COUNT(*) FROM jobs')->fetchColumn(), 1);
+    $completedJobs = (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'Completed'")->fetchColumn();
+    $customerRating = (float) $pdo->query('SELECT COALESCE(AVG(rating), 0) FROM customers WHERE rating IS NOT NULL')->fetchColumn();
+
+    return [
+        'monthly_revenue' => $monthlyRevenue,
+        'completion_rate' => (int) round(($completedJobs / $totalJobs) * 100),
+        'customer_rating' => round($customerRating, 1),
+    ];
+}
+
+function coolopz_fetch_service_breakdown(): array
+{
+    $pdo = coolopz_db();
+    $rows = $pdo->query(
+        "SELECT service_type, COUNT(*) AS total
+         FROM jobs
+         GROUP BY service_type
+         ORDER BY total DESC"
+    )->fetchAll();
+
+    $grandTotal = array_sum(array_map(static fn (array $row): int => (int) $row['total'], $rows));
+    $grandTotal = max($grandTotal, 1);
+
+    $items = array_map(
+        static function (array $row) use ($grandTotal): array {
+            $percentage = (int) round(((int) $row['total'] / $grandTotal) * 100);
+
+            return [
+                'service_type' => $row['service_type'],
+                'percentage' => $percentage,
+            ];
+        },
+        $rows
+    );
+
+    return $items !== [] ? $items : [
+        ['service_type' => 'No Data', 'percentage' => 0],
+    ];
+}

@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/data.php';
 
 coolopz_require_login();
 
 $currentUser = coolopz_current_user();
+$metrics = coolopz_fetch_dashboard_metrics();
+$priorityJobs = coolopz_fetch_priority_jobs();
 $pageTitle = 'CoolOpz Portal | Dashboard';
 $activePage = 'dashboard';
 $currentUserName = $currentUser['name'] ?? 'Admin User';
@@ -24,21 +27,21 @@ include __DIR__ . '/includes/sidebar.php';
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Active Jobs</span>
-                        <strong class="stat-value">24</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $metrics['active_jobs'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Current jobs being handled today.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Available Technicians</span>
-                        <strong class="stat-value">12</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $metrics['available_technicians'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Ready for maintenance and emergency calls.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Completed Today</span>
-                        <strong class="stat-value">18</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $metrics['completed_today'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Jobs closed and ready for invoicing.</p>
                     </div>
                 </div>
@@ -66,30 +69,14 @@ include __DIR__ . '/includes/sidebar.php';
                                     </tr>
                                 </thead>
                                 <tbody>
+<?php foreach ($priorityJobs as $job): ?>
                                     <tr>
-                                        <td>#COP-2041</td>
-                                        <td>Skyline Residence</td>
-                                        <td>Repair</td>
-                                        <td><span class="status-badge status-urgent">Urgent</span></td>
+                                        <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><span class="status-badge <?= coolopz_status_badge_class($job['status']) ?>"><?= htmlspecialchars($job['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                     </tr>
-                                    <tr>
-                                        <td>#COP-2038</td>
-                                        <td>Pelita Food Hall</td>
-                                        <td>Maintenance</td>
-                                        <td><span class="status-badge status-progress">In Progress</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2035</td>
-                                        <td>Riverview Co-Working</td>
-                                        <td>Installation</td>
-                                        <td><span class="status-badge status-queued">Queued</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2031</td>
-                                        <td>Harbor Dental Clinic</td>
-                                        <td>Gas Top-Up</td>
-                                        <td><span class="status-badge status-complete">Completed</span></td>
-                                    </tr>
+<?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>

@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/data.php';
 
 coolopz_require_login();
 
 $currentUser = coolopz_current_user();
+$jobMetrics = coolopz_fetch_job_metrics();
+$jobs = coolopz_fetch_jobs();
 $pageTitle = 'CoolOpz Portal | Jobs';
 $activePage = 'jobs';
 $currentUserName = $currentUser['name'] ?? 'Admin User';
@@ -18,6 +21,29 @@ include __DIR__ . '/includes/sidebar.php';
             <section class="hero-section">
                 <span class="section-label">Jobs</span>
                 <p class="hero-copy">Keep this page focused on ticket flow, technician assignment, and the jobs that still need attention.</p>
+            </section>
+            <section class="row g-3 g-lg-4">
+                <div class="col-md-4">
+                    <div class="simple-panel stat-card">
+                        <span class="stat-label">Open Tickets</span>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $jobMetrics['open_tickets'], ENT_QUOTES, 'UTF-8') ?></strong>
+                        <p>All service jobs not yet closed.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="simple-panel stat-card">
+                        <span class="stat-label">On Site</span>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $jobMetrics['on_site'], ENT_QUOTES, 'UTF-8') ?></strong>
+                        <p>Technicians currently working at client locations.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="simple-panel stat-card">
+                        <span class="stat-label">Awaiting Parts</span>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $jobMetrics['awaiting_parts'], ENT_QUOTES, 'UTF-8') ?></strong>
+                        <p>Jobs paused until replacement parts arrive.</p>
+                    </div>
+                </div>
             </section>
             <section class="row g-4 mt-1">
                 <div class="col-12">
@@ -42,62 +68,17 @@ include __DIR__ . '/includes/sidebar.php';
                                     </tr>
                                 </thead>
                                 <tbody>
+<?php foreach ($jobs as $job): ?>
                                     <tr>
-                                        <td>#COP-2048</td>
-                                        <td>Northpoint Suites</td>
-                                        <td>Team Alpha</td>
-                                        <td>KL Central</td>
-                                        <td><span class="status-badge status-urgent">Urgent</span></td>
+                                        <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['technician_team'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['zone'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><span class="status-badge <?= coolopz_status_badge_class($job['status']) ?>"><?= htmlspecialchars($job['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                     </tr>
-                                    <tr>
-                                        <td>#COP-2045</td>
-                                        <td>Pelita Food Hall</td>
-                                        <td>Team Delta</td>
-                                        <td>Shah Alam</td>
-                                        <td><span class="status-badge status-progress">In Progress</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2042</td>
-                                        <td>Riverview Co-Working</td>
-                                        <td>Team Sigma</td>
-                                        <td>Putrajaya</td>
-                                        <td><span class="status-badge status-queued">Queued</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>#COP-2039</td>
-                                        <td>Harbor Dental Clinic</td>
-                                        <td>Team Nova</td>
-                                        <td>Ampang</td>
-                                        <td><span class="status-badge status-complete">Completed</span></td>
-                                    </tr>
+<?php endforeach; ?>
                                 </tbody>
                             </table>
-                        </div>
-                        <div class="info-list mt-3">
-                            <div class="info-row">
-                                <div>
-                                    <strong>08:30</strong>
-                                    <p>Warehouse release for compressor replacements.</p>
-                                </div>
-                            </div>
-                            <div class="info-row">
-                                <div>
-                                    <strong>11:00</strong>
-                                    <p>Commercial maintenance visit at Meridian Office Park.</p>
-                                </div>
-                            </div>
-                            <div class="info-row">
-                                <div>
-                                    <strong>14:00</strong>
-                                    <p>New installation handover at Riverview Co-Working.</p>
-                                </div>
-                            </div>
-                            <div class="info-row">
-                                <div>
-                                    <strong>17:30</strong>
-                                    <p>Close completed jobs and sync service photos.</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

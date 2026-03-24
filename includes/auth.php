@@ -1,32 +1,31 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/database.php';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_name('coolopz_session');
     session_start();
 }
 
-function coolopz_demo_users(): array
-{
-    return [
-        [
-            'email' => 'admin@coolopz.local',
-            'name' => 'Admin User',
-            'role' => 'Operations Admin',
-            'password_hash' => '$2y$10$C9hFVK0LFCUv2aw9zR/ChOZRpZHcC/UmCJyFpAjIjFzSM3t.O2b82',
-        ],
-    ];
-}
-
 function coolopz_find_user(string $email): ?array
 {
-    foreach (coolopz_demo_users() as $user) {
-        if (strcasecmp($user['email'], $email) === 0) {
-            return $user;
-        }
+    $statement = coolopz_db()->prepare(
+        'SELECT email, full_name, role_name, password_hash FROM users WHERE email = :email LIMIT 1'
+    );
+    $statement->execute(['email' => $email]);
+    $user = $statement->fetch();
+
+    if ($user === false) {
+        return null;
     }
 
-    return null;
+    return [
+        'email' => $user['email'],
+        'name' => $user['full_name'],
+        'role' => $user['role_name'],
+        'password_hash' => $user['password_hash'],
+    ];
 }
 
 function coolopz_is_logged_in(): bool

@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/data.php';
 
 coolopz_require_login();
 
 $currentUser = coolopz_current_user();
+$customerMetrics = coolopz_fetch_customer_metrics();
+$customers = coolopz_fetch_customers();
 $pageTitle = 'CoolOpz Portal | Customers';
 $activePage = 'customers';
 $currentUserName = $currentUser['name'] ?? 'Admin User';
@@ -24,21 +27,21 @@ include __DIR__ . '/includes/sidebar.php';
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Commercial Clients</span>
-                        <strong class="stat-value">28</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $customerMetrics['commercial'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Businesses with recurring service plans.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Residential Accounts</span>
-                        <strong class="stat-value">40</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $customerMetrics['residential'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Homeowners and property management accounts.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Renewals Pending</span>
-                        <strong class="stat-value">6</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $customerMetrics['renewals_pending'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Contracts that need follow-up this month.</p>
                     </div>
                 </div>
@@ -52,31 +55,19 @@ include __DIR__ . '/includes/sidebar.php';
                                 <span class="section-label">Accounts</span>
                                 <h2 class="panel-title">Customer Portfolio</h2>
                             </div>
-                            <span class="subtle-note">68 total accounts</span>
+                            <span class="subtle-note"><?= htmlspecialchars((string) $customerMetrics['total'], ENT_QUOTES, 'UTF-8') ?> total accounts</span>
                         </div>
 
                         <div class="card-stack">
+<?php foreach ($customers as $customer): ?>
                             <div class="stack-card">
                                 <div>
-                                    <strong>Meridian Office Park</strong>
-                                    <p>Quarterly preventive maintenance for 32 indoor units.</p>
+                                    <strong><?= htmlspecialchars($customer['name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <p><?= htmlspecialchars($customer['notes'], ENT_QUOTES, 'UTF-8') ?></p>
                                 </div>
-                                <span class="status-badge status-progress">Contract Active</span>
+                                <span class="status-badge <?= coolopz_status_badge_class($customer['renewal_status']) ?>"><?= htmlspecialchars($customer['renewal_status'], ENT_QUOTES, 'UTF-8') ?></span>
                             </div>
-                            <div class="stack-card">
-                                <div>
-                                    <strong>Bloom Pediatric Center</strong>
-                                    <p>High-priority service account with same-day response terms.</p>
-                                </div>
-                                <span class="status-badge status-urgent">Priority</span>
-                            </div>
-                            <div class="stack-card">
-                                <div>
-                                    <strong>Casa Bayu Residence</strong>
-                                    <p>Renewal proposal prepared for multi-unit maintenance package.</p>
-                                </div>
-                                <span class="status-badge status-queued">Renewal Due</span>
-                            </div>
+<?php endforeach; ?>
                         </div>
                     </div>
                 </div>

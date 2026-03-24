@@ -1,9 +1,12 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/data.php';
 
 coolopz_require_login();
 
 $currentUser = coolopz_current_user();
+$reportMetrics = coolopz_fetch_report_metrics();
+$breakdown = coolopz_fetch_service_breakdown();
 $pageTitle = 'CoolOpz Portal | Reports';
 $activePage = 'reports';
 $currentUserName = $currentUser['name'] ?? 'Admin User';
@@ -24,21 +27,21 @@ include __DIR__ . '/includes/sidebar.php';
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Monthly Revenue</span>
-                        <strong class="stat-value">RM84k</strong>
+                        <strong class="stat-value">RM<?= htmlspecialchars(number_format((float) $reportMetrics['monthly_revenue'], 0), ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Total invoiced service value for the current month.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Completion Rate</span>
-                        <strong class="stat-value">92%</strong>
+                        <strong class="stat-value"><?= htmlspecialchars((string) $reportMetrics['completion_rate'], ENT_QUOTES, 'UTF-8') ?>%</strong>
                         <p>Jobs closed within the planned service window.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Customer Rating</span>
-                        <strong class="stat-value">4.8</strong>
+                        <strong class="stat-value"><?= htmlspecialchars(number_format((float) $reportMetrics['customer_rating'], 1), ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Average post-service rating across all recent jobs.</p>
                     </div>
                 </div>
@@ -56,27 +59,15 @@ include __DIR__ . '/includes/sidebar.php';
                         </div>
 
                         <div class="chart-stack">
+<?php foreach ($breakdown as $item): ?>
                             <div class="chart-row">
                                 <div class="chart-meta">
-                                    <strong>Preventive Maintenance</strong>
-                                    <span>46%</span>
+                                    <strong><?= htmlspecialchars($item['service_type'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <span><?= htmlspecialchars((string) $item['percentage'], ENT_QUOTES, 'UTF-8') ?>%</span>
                                 </div>
-                                <div class="chart-bar"><span style="width: 46%"></span></div>
+                                <div class="chart-bar"><span style="width: <?= htmlspecialchars((string) $item['percentage'], ENT_QUOTES, 'UTF-8') ?>%"></span></div>
                             </div>
-                            <div class="chart-row">
-                                <div class="chart-meta">
-                                    <strong>Repairs</strong>
-                                    <span>31%</span>
-                                </div>
-                                <div class="chart-bar"><span style="width: 31%"></span></div>
-                            </div>
-                            <div class="chart-row">
-                                <div class="chart-meta">
-                                    <strong>Installations</strong>
-                                    <span>23%</span>
-                                </div>
-                                <div class="chart-bar"><span style="width: 23%"></span></div>
-                            </div>
+<?php endforeach; ?>
                         </div>
                     </div>
                 </div>
