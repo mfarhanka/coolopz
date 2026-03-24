@@ -1,8 +1,5 @@
 <?php
 $activePage = $activePage ?? 'dashboard';
-$sidebarLabel = $sidebarLabel ?? 'Today';
-$sidebarMetric = $sidebarMetric ?? '24 active jobs';
-$sidebarText = $sidebarText ?? 'Separate pages for dashboard, operations, customers, and reporting.';
 
 $navItems = [
     [
@@ -32,7 +29,7 @@ $navItems = [
 ];
 ?>
         <aside class="portal-sidebar">
-            <div>
+            <div class="w-100">
                 <a class="sidebar-brand" href="index.php">
                     <span class="brand-mark">CO</span>
                     <span>
@@ -53,13 +50,5 @@ $navItems = [
                     </a>
 <?php endforeach; ?>
                 </nav>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="simple-panel sidebar-card">
-                    <span class="section-label"><?= htmlspecialchars($sidebarLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    <h2 class="panel-title"><?= htmlspecialchars($sidebarMetric, ENT_QUOTES, 'UTF-8') ?></h2>
-                    <p><?= htmlspecialchars($sidebarText, ENT_QUOTES, 'UTF-8') ?></p>
-                </div>
             </div>
         </aside>

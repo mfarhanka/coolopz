@@ -34,7 +34,6 @@ body {
 .portal-sidebar {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     gap: 2rem;
     padding: 2rem 1.5rem;
     background: linear-gradient(180deg, var(--portal-sidebar) 0%, var(--portal-sidebar-deep) 100%);
@@ -200,25 +199,6 @@ body {
     gap: 1rem;
 }
 
-.hero-note,
-.sidebar-card {
-    background: var(--portal-blue-soft);
-}
-
-.sidebar-card {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.sidebar-card .section-label {
-    color: rgba(255, 255, 255, 0.72);
-}
-
-.sidebar-card .panel-title,
-.sidebar-card p {
-    color: var(--portal-white);
-}
-
 .panel-title {
     margin: 0;
     font-size: 1.4rem;
@@ -308,32 +288,12 @@ body {
     color: #1c8b5f;
 }
 
-.form-label {
-    font-weight: 500;
-}
-
-.form-control,
-.form-select {
-    min-height: 48px;
-    border-radius: 12px;
-    border-color: var(--portal-border);
-    box-shadow: none;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: #a8c9f3;
-    box-shadow: 0 0 0 0.2rem rgba(30, 111, 217, 0.1);
-}
-
-.info-list,
 .card-stack,
 .chart-stack {
     display: grid;
     gap: 1rem;
 }
 
-.info-row,
 .stack-card {
     display: flex;
     align-items: flex-start;
@@ -345,7 +305,6 @@ body {
     border: 1px solid var(--portal-border);
 }
 
-.info-row p,
 .stack-card p {
     margin: 0.25rem 0 0;
     color: var(--portal-muted);
@@ -406,7 +365,6 @@ body {
     }
 
     .panel-head,
-    .info-row,
     .stack-card {
         flex-direction: column;
         align-items: flex-start;

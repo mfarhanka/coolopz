@@ -1,61 +1,19 @@
 <?php
 $pageTitle = 'CoolOpz Portal | Jobs';
 $activePage = 'jobs';
-$sidebarLabel = 'Jobs';
-$sidebarMetric = '6 teams dispatched';
-$sidebarText = 'Track urgent repairs, installations, and scheduled maintenance from one page.';
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
 ?>
         <main class="portal-main">
             <section class="hero-section">
-                <div class="row align-items-center g-4">
-                    <div class="col-xl-8">
-                        <span class="section-label">Jobs</span>
-                        <h1 class="hero-title">Manage service jobs by status, team, and priority.</h1>
-                        <p class="hero-copy">This page focuses on daily execution with active tickets, assigned crews, and a short schedule view for dispatch coordination.</p>
-                    </div>
-                    <div class="col-xl-4">
-                        <div class="simple-panel hero-note">
-                            <span class="section-label">Dispatch window</span>
-                            <ul class="snapshot-list">
-                                <li>4 urgent tickets</li>
-                                <li>12 maintenance visits</li>
-                                <li>8 installation tasks</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                <span class="section-label">Jobs</span>
+                <h1 class="hero-title">Manage service jobs by status and priority.</h1>
+                <p class="hero-copy">Keep this page focused on ticket flow, technician assignment, and the jobs that still need attention.</p>
             </section>
-
-            <section class="row g-3 g-lg-4">
-                <div class="col-md-4">
-                    <div class="simple-panel stat-card">
-                        <span class="stat-label">Open Tickets</span>
-                        <strong class="stat-value">29</strong>
-                        <p>All service jobs not yet closed.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="simple-panel stat-card">
-                        <span class="stat-label">On Site</span>
-                        <strong class="stat-value">14</strong>
-                        <p>Technicians currently working at client locations.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="simple-panel stat-card">
-                        <span class="stat-label">Awaiting Parts</span>
-                        <strong class="stat-value">5</strong>
-                        <p>Jobs paused until replacement parts arrive.</p>
-                    </div>
-                </div>
-            </section>
-
             <section class="row g-4 mt-1">
-                <div class="col-xl-8">
-                    <div class="simple-panel h-100">
+                <div class="col-12">
+                    <div class="simple-panel">
                         <div class="panel-head mb-3">
                             <div>
                                 <span class="section-label">Service board</span>
@@ -107,13 +65,6 @@ include __DIR__ . '/includes/sidebar.php';
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-4">
-                    <div class="simple-panel h-100">
-                        <span class="section-label">Schedule</span>
-                        <h2 class="panel-title">Dispatch Timeline</h2>
                         <div class="info-list mt-3">
                             <div class="info-row">
                                 <div>
