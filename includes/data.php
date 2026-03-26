@@ -172,16 +172,88 @@ function coolopz_fetch_customer_metrics(): array
     ];
 }
 
+function coolopz_customer_types(): array
+{
+    return [
+        'Commercial',
+        'Residential',
+    ];
+}
+
+function coolopz_customer_renewal_statuses(): array
+{
+    return [
+        'Contract Active',
+        'Renewal Due',
+        'Priority',
+    ];
+}
+
 function coolopz_fetch_customers(): array
 {
     $pdo = coolopz_db();
     $statement = $pdo->query(
-        "SELECT name, customer_type, notes, renewal_status
+        "SELECT id, name, customer_type, notes, renewal_status, rating, created_at
          FROM customers
          ORDER BY FIELD(renewal_status, 'Priority', 'Renewal Due', 'Contract Active'), id DESC"
     );
 
     return $statement->fetchAll();
+}
+
+function coolopz_find_customer(int $customerId): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id, name, customer_type, notes, renewal_status, rating FROM customers WHERE id = :id LIMIT 1'
+    );
+    $statement->execute(['id' => $customerId]);
+    $customer = $statement->fetch();
+
+    return $customer === false ? null : $customer;
+}
+
+function coolopz_create_customer(array $customerData): void
+{
+    $statement = coolopz_db()->prepare(
+        'INSERT INTO customers (name, customer_type, notes, renewal_status, rating)
+         VALUES (:name, :customer_type, :notes, :renewal_status, :rating)'
+    );
+
+    $statement->execute([
+        'name' => $customerData['name'],
+        'customer_type' => $customerData['customer_type'],
+        'notes' => $customerData['notes'],
+        'renewal_status' => $customerData['renewal_status'],
+        'rating' => $customerData['rating'],
+    ]);
+}
+
+function coolopz_update_customer(int $customerId, array $customerData): void
+{
+    $statement = coolopz_db()->prepare(
+        'UPDATE customers
+         SET name = :name,
+             customer_type = :customer_type,
+             notes = :notes,
+             renewal_status = :renewal_status,
+             rating = :rating
+         WHERE id = :id'
+    );
+
+    $statement->execute([
+        'id' => $customerId,
+        'name' => $customerData['name'],
+        'customer_type' => $customerData['customer_type'],
+        'notes' => $customerData['notes'],
+        'renewal_status' => $customerData['renewal_status'],
+        'rating' => $customerData['rating'],
+    ]);
+}
+
+function coolopz_delete_customer(int $customerId): void
+{
+    $statement = coolopz_db()->prepare('DELETE FROM customers WHERE id = :id');
+    $statement->execute(['id' => $customerId]);
 }
 
 function coolopz_fetch_report_metrics(): array
