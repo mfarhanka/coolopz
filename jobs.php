@@ -148,7 +148,7 @@ include __DIR__ . '/includes/sidebar.php';
                 <span class="section-label">Jobs</span>
                 <p class="hero-copy">Create, update, and close service jobs without leaving the operations board.</p>
             </section>
-            <section class="row g-3 g-lg-4">
+            <section class="row g-2 g-lg-3">
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Open Tickets</span>
@@ -171,10 +171,10 @@ include __DIR__ . '/includes/sidebar.php';
                     </div>
                 </div>
             </section>
-            <section class="row g-4 mt-1">
+            <section class="row g-3 mt-0">
                 <div class="col-12">
                     <div class="simple-panel h-100">
-                        <div class="panel-head mb-3">
+                        <div class="panel-head mb-2">
                             <div>
                                 <span class="section-label">Service board</span>
                                 <h2 class="panel-title">Manage Jobs</h2>
@@ -186,11 +186,11 @@ include __DIR__ . '/includes/sidebar.php';
                         </div>
 
 <?php if ($errorMessage !== ''): ?>
-                        <div class="login-alert mb-3" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="login-alert mb-2" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
 <?php if ($successMessage !== ''): ?>
-                        <div class="form-success mb-3" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="form-success mb-2" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
                         <div class="table-responsive">
@@ -257,7 +257,7 @@ include __DIR__ . '/includes/sidebar.php';
                             <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
-                            <form method="post" class="row g-3">
+                            <form method="post" class="row g-2">
                                 <input type="hidden" name="action" value="<?= $editJobId > 0 ? 'update' : 'create' ?>">
 <?php if ($editJobId > 0): ?>
                                 <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $editJobId, ENT_QUOTES, 'UTF-8') ?>">

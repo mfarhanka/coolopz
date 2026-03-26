@@ -23,7 +23,7 @@ include __DIR__ . '/includes/sidebar.php';
                 <p class="hero-copy">Keep reporting simple with the main KPIs and a single service mix summary.</p>
             </section>
 
-            <section class="row g-3 g-lg-4">
+            <section class="row g-2 g-lg-3">
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Monthly Revenue</span>
@@ -47,10 +47,10 @@ include __DIR__ . '/includes/sidebar.php';
                 </div>
             </section>
 
-            <section class="row g-4 mt-1">
+            <section class="row g-3 mt-0">
                 <div class="col-12">
                     <div class="simple-panel">
-                        <div class="panel-head mb-3">
+                        <div class="panel-head mb-2">
                             <div>
                                 <span class="section-label">Performance mix</span>
                                 <h2 class="panel-title">Service Category Breakdown</h2>

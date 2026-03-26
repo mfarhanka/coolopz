@@ -127,7 +127,7 @@ include __DIR__ . '/includes/sidebar.php';
                 <p class="hero-copy">Use this page for the active customer list and simple renewal tracking.</p>
             </section>
 
-            <section class="row g-3 g-lg-4">
+            <section class="row g-2 g-lg-3">
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Commercial Clients</span>
@@ -151,10 +151,10 @@ include __DIR__ . '/includes/sidebar.php';
                 </div>
             </section>
 
-            <section class="row g-4 mt-1">
+            <section class="row g-3 mt-0">
                 <div class="col-12">
                     <div class="simple-panel">
-                        <div class="panel-head mb-3">
+                        <div class="panel-head mb-2">
                             <div>
                                 <span class="section-label">Accounts</span>
                                 <h2 class="panel-title">Customer Portfolio</h2>
@@ -166,11 +166,11 @@ include __DIR__ . '/includes/sidebar.php';
                         </div>
 
 <?php if ($errorMessage !== ''): ?>
-                        <div class="login-alert mb-3" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="login-alert mb-2" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
 <?php if ($successMessage !== ''): ?>
-                        <div class="form-success mb-3" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="form-success mb-2" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
                         <div class="card-stack">
@@ -179,7 +179,7 @@ include __DIR__ . '/includes/sidebar.php';
                                 <div>
                                     <strong><?= htmlspecialchars($customer['name'], ENT_QUOTES, 'UTF-8') ?></strong>
                                     <p><?= htmlspecialchars($customer['notes'], ENT_QUOTES, 'UTF-8') ?></p>
-                                    <span class="subtle-note d-block mt-2"><?= htmlspecialchars($customer['customer_type'], ENT_QUOTES, 'UTF-8') ?> • Rating <?= htmlspecialchars(number_format((float) ($customer['rating'] ?? 0), 1), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="subtle-note d-block mt-1"><?= htmlspecialchars($customer['customer_type'], ENT_QUOTES, 'UTF-8') ?> • Rating <?= htmlspecialchars(number_format((float) ($customer['rating'] ?? 0), 1), ENT_QUOTES, 'UTF-8') ?></span>
                                 </div>
                                 <div class="jobs-actions justify-content-end">
                                     <span class="status-badge <?= coolopz_status_badge_class($customer['renewal_status']) ?>"><?= htmlspecialchars($customer['renewal_status'], ENT_QUOTES, 'UTF-8') ?></span>
@@ -212,7 +212,7 @@ include __DIR__ . '/includes/sidebar.php';
                             <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
-                            <form method="post" class="row g-3">
+                            <form method="post" class="row g-2">
                                 <input type="hidden" name="action" value="<?= $editCustomerId > 0 ? 'update' : 'create' ?>">
 <?php if ($editCustomerId > 0): ?>
                                 <input type="hidden" name="customer_id" value="<?= htmlspecialchars((string) $editCustomerId, ENT_QUOTES, 'UTF-8') ?>">

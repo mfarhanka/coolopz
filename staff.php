@@ -61,7 +61,7 @@ include __DIR__ . '/includes/sidebar.php';
                 <p class="hero-copy">Create and manage portal accounts for your internal team.</p>
             </section>
 
-            <section class="row g-3 g-lg-4">
+            <section class="row g-2 g-lg-3">
                 <div class="col-md-4">
                     <div class="simple-panel stat-card">
                         <span class="stat-label">Total Users</span>
@@ -85,21 +85,21 @@ include __DIR__ . '/includes/sidebar.php';
                 </div>
             </section>
 
-            <section class="row g-4 mt-1">
+            <section class="row g-3 mt-0">
                 <div class="col-xl-5">
                     <div class="simple-panel h-100">
                         <span class="section-label">Create user</span>
                         <h2 class="panel-title">Add Staff Account</h2>
 
 <?php if ($errorMessage !== ''): ?>
-                        <div class="login-alert mt-3" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="login-alert mt-2" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
 <?php if ($successMessage !== ''): ?>
-                        <div class="form-success mt-3" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="form-success mt-2" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
-                        <form method="post" class="row g-3 mt-1">
+                        <form method="post" class="row g-2 mt-0">
                             <div class="col-12">
                                 <label class="form-label" for="full_name">Full Name</label>
                                 <input class="form-control" id="full_name" name="full_name" type="text" value="<?= htmlspecialchars($formData['full_name'], ENT_QUOTES, 'UTF-8') ?>" required>
@@ -129,7 +129,7 @@ include __DIR__ . '/includes/sidebar.php';
 
                 <div class="col-xl-7">
                     <div class="simple-panel h-100">
-                        <div class="panel-head mb-3">
+                        <div class="panel-head mb-2">
                             <div>
                                 <span class="section-label">Accounts</span>
                                 <h2 class="panel-title">Portal Users</h2>
