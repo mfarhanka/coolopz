@@ -11,6 +11,7 @@
     --portal-muted: #6c86a4;
     --portal-white: #ffffff;
     --portal-bg: #f7fbff;
+    --portal-sidebar-width: 240px;
 }
 
 * {
@@ -27,15 +28,15 @@ body {
 
 .portal-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: var(--portal-sidebar-width) 1fr;
     min-height: 100vh;
 }
 
 .portal-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
-    padding: 2rem 1.5rem;
+    gap: 1.4rem;
+    padding: 1.4rem 1.1rem;
     background: linear-gradient(180deg, var(--portal-sidebar) 0%, var(--portal-sidebar-deep) 100%);
     border-right: 1px solid var(--portal-sidebar-line);
     box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
@@ -44,7 +45,7 @@ body {
 .portal-sidebar .offcanvas-body {
     display: flex;
     flex: 1;
-    padding: 2rem 1.5rem;
+    padding: 1.4rem 1.1rem;
 }
 
 .portal-offcanvas-header {
@@ -55,7 +56,7 @@ body {
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 0.75rem;
     text-decoration: none;
 }
 
@@ -63,9 +64,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.14);
     color: var(--portal-white);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -73,7 +74,7 @@ body {
 }
 
 .brand-title {
-    font-size: 1rem;
+    font-size: 0.96rem;
     font-weight: 700;
     color: var(--portal-white);
 }
@@ -93,15 +94,15 @@ body {
 
 .sidebar-nav {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.35rem;
 }
 
 .sidebar-link {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    padding: 0.9rem 1rem;
-    border-radius: 12px;
+    gap: 0.7rem;
+    padding: 0.7rem 0.8rem;
+    border-radius: 10px;
     color: var(--portal-sidebar-text);
     text-decoration: none;
     font-weight: 500;
@@ -112,9 +113,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 10px;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 9px;
     background: rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
 }
@@ -139,25 +140,25 @@ body {
 }
 
 .portal-main {
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .portal-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.8rem 1rem;
     background: linear-gradient(180deg, var(--portal-sidebar) 0%, var(--portal-sidebar-deep) 100%);
     border: 1px solid var(--portal-sidebar-line);
-    border-radius: 18px;
+    border-radius: 16px;
 }
 
 .topbar-main {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 0.75rem;
 }
 
 .menu-toggle {
@@ -165,10 +166,10 @@ body {
     flex-direction: column;
     justify-content: center;
     gap: 0.22rem;
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0.55rem;
-    border-radius: 12px;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0.45rem;
+    border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.14);
     background: rgba(255, 255, 255, 0.08);
 }
@@ -189,8 +190,8 @@ body {
 
 .topbar-label {
     display: inline-block;
-    margin-bottom: 0.2rem;
-    font-size: 0.8rem;
+    margin-bottom: 0.1rem;
+    font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -199,21 +200,22 @@ body {
 
 .topbar-copy {
     margin: 0;
+    font-size: 0.94rem;
     color: rgba(255, 255, 255, 0.82);
 }
 
 .topbar-actions {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: 0.65rem;
 }
 
 .user-chip {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    padding: 0.45rem 0.7rem;
-    border-radius: 14px;
+    gap: 0.65rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
@@ -222,9 +224,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 12px;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.14);
     color: var(--portal-white);
     font-weight: 700;
@@ -232,7 +234,7 @@ body {
 
 .user-chip strong {
     display: block;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--portal-white);
 }
 
@@ -256,8 +258,8 @@ body {
 
 .btn-portal-primary,
 .btn-portal-secondary {
-    border-radius: 12px;
-    padding: 0.75rem 1.1rem;
+    border-radius: 10px;
+    padding: 0.58rem 0.95rem;
     font-weight: 600;
 }
 
@@ -287,12 +289,12 @@ body {
 }
 
 .hero-section {
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.35rem;
 }
 
 .section-label {
     display: inline-block;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.45rem;
     color: var(--portal-blue);
     font-size: 0.8rem;
     font-weight: 700;
@@ -301,22 +303,22 @@ body {
 }
 
 .simple-panel {
-    padding: 1.5rem;
+    padding: 1.15rem;
     background: var(--portal-white);
     border: 1px solid var(--portal-border);
-    border-radius: 18px;
+    border-radius: 16px;
 }
 
 .panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .panel-title {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--portal-blue-dark);
 }
@@ -327,7 +329,7 @@ body {
 }
 
 .snapshot-list li + li {
-    margin-top: 0.65rem;
+    margin-top: 0.45rem;
 }
 
 .stat-card {
@@ -336,20 +338,20 @@ body {
 
 .stat-label {
     display: block;
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     color: var(--portal-muted);
 }
 
 .stat-value {
     display: block;
-    margin: 0.4rem 0 0.5rem;
-    font-size: 2.4rem;
+    margin: 0.25rem 0 0.4rem;
+    font-size: 2rem;
     line-height: 1;
     color: var(--portal-blue-dark);
 }
 
 .subtle-note {
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     color: var(--portal-muted);
 }
 
@@ -360,7 +362,7 @@ body {
 
 .portal-table thead th {
     color: var(--portal-muted);
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -368,8 +370,8 @@ body {
 }
 
 .portal-table tbody td {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
     border-color: var(--portal-border);
 }
 
@@ -377,9 +379,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.4rem 0.75rem;
+    padding: 0.3rem 0.6rem;
     border-radius: 999px;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
 }
 
@@ -406,28 +408,28 @@ body {
 .card-stack,
 .chart-stack {
     display: grid;
-    gap: 1rem;
+    gap: 0.8rem;
 }
 
 .stack-card {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.1rem;
-    border-radius: 14px;
+    gap: 0.75rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 12px;
     background: #fbfdff;
     border: 1px solid var(--portal-border);
 }
 
 .stack-card p {
-    margin: 0.25rem 0 0;
+    margin: 0.2rem 0 0;
     color: var(--portal-muted);
 }
 
 .chart-row {
     display: grid;
-    gap: 0.55rem;
+    gap: 0.45rem;
 }
 
 .chart-meta {
@@ -444,7 +446,7 @@ body {
 
 .chart-bar {
     width: 100%;
-    height: 12px;
+    height: 10px;
     background: #e8f1fb;
     border-radius: 999px;
     overflow: hidden;
@@ -473,14 +475,14 @@ body {
     }
 
     .portal-sidebar {
-        width: min(280px, 85vw);
+        width: min(var(--portal-sidebar-width), 85vw);
         padding: 0;
         border-right: 0;
         border-bottom: 0;
     }
 
     .portal-sidebar .offcanvas-body {
-        padding: 1.25rem;
+        padding: 1rem;
     }
 
 }
@@ -488,7 +490,7 @@ body {
 @media (max-width: 767.98px) {
     .portal-main,
     .simple-panel {
-        padding: 1.25rem;
+        padding: 1rem;
     }
 
     .portal-topbar,
@@ -523,10 +525,10 @@ body {
 }
 
 .login-card {
-    padding: 1.75rem;
+    padding: 1.5rem;
     background: var(--portal-white);
     border: 1px solid var(--portal-border);
-    border-radius: 22px;
+    border-radius: 18px;
     box-shadow: 0 20px 45px rgba(10, 45, 91, 0.08);
 }
 
@@ -534,7 +536,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.9rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
 }
 
 .login-brand strong {
@@ -548,12 +550,12 @@ body {
 }
 
 .login-copy {
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
 }
 
 .login-title {
     margin: 0 0 0.4rem;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     color: var(--portal-blue-dark);
 }
 
@@ -563,9 +565,9 @@ body {
 }
 
 .login-alert {
-    margin-bottom: 1rem;
-    padding: 0.85rem 1rem;
-    border-radius: 14px;
+    margin-bottom: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
     background: #fff0eb;
     border: 1px solid #ffd3c8;
     color: #bc4b2c;
@@ -573,9 +575,9 @@ body {
 }
 
 .form-success {
-    margin-bottom: 1rem;
-    padding: 0.85rem 1rem;
-    border-radius: 14px;
+    margin-bottom: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
     background: #ebfaf3;
     border: 1px solid #bdeacf;
     color: #1c8b5f;
@@ -588,8 +590,8 @@ body {
 
 .form-control,
 .form-select {
-    min-height: 48px;
-    border-radius: 12px;
+    min-height: 42px;
+    border-radius: 10px;
     border-color: var(--portal-border);
     box-shadow: none;
 }
@@ -601,27 +603,27 @@ body {
 }
 
 .notes-field {
-    min-height: 110px;
+    min-height: 96px;
     resize: vertical;
 }
 
 .jobs-form-actions,
 .jobs-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.6rem;
     flex-wrap: wrap;
 }
 
 .jobs-actions {
-    gap: 0.5rem;
+    gap: 0.45rem;
 }
 
 .login-help {
     display: grid;
     gap: 0.2rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
     border-top: 1px solid var(--portal-border);
     color: var(--portal-muted);
-    font-size: 0.92rem;
+    font-size: 0.88rem;
 }
