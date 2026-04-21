@@ -14,6 +14,7 @@ $userInitials = coolopz_user_initials($currentUserName);
 $serviceTypes = coolopz_job_service_types();
 $statuses = coolopz_job_statuses();
 $priorities = coolopz_job_priorities();
+$customerOptions = coolopz_fetch_customer_options();
 $staffTechnicians = coolopz_fetch_assignable_staff();
 
 $errorMessage = '';
@@ -69,7 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'billed_amount' => trim((string) ($_POST['billed_amount'] ?? '')),
             'notes' => trim((string) ($_POST['notes'] ?? '')),
         ];
+        $allowedCustomers = array_map(static fn (array $customer): string => $customer['name'], $customerOptions);
         $allowedTechnicians = array_map(static fn (array $staffUser): string => $staffUser['full_name'], $staffTechnicians);
+
+        if ($action === 'update' && $existingJob !== null && $existingJob['customer_name'] !== '') {
+            $allowedCustomers[] = $existingJob['customer_name'];
+        }
+        $allowedCustomers = array_values(array_unique($allowedCustomers));
 
         if ($action === 'update' && $existingJob !== null && $existingJob['technician_team'] !== '') {
             $allowedTechnicians[] = $existingJob['technician_team'];
@@ -81,6 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             || $jobForm['technician_team'] === ''
         ) {
             $errorMessage = 'Customer and technician are required.';
+            $shouldOpenJobModal = true;
+        } elseif (!in_array($jobForm['customer_name'], $allowedCustomers, true)) {
+            $errorMessage = 'Select a customer from the customer list.';
             $shouldOpenJobModal = true;
         } elseif (!in_array($jobForm['service_type'], $serviceTypes, true)) {
             $errorMessage = 'Select a valid service type.';
@@ -213,6 +223,7 @@ include __DIR__ . '/includes/sidebar.php';
                                         <th>Technician</th>
                                         <th>Status</th>
                                         <th>Priority</th>
+                                        <th>Billed</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -228,6 +239,7 @@ include __DIR__ . '/includes/sidebar.php';
                                         <td><?= htmlspecialchars($job['technician_team'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><span class="status-badge <?= coolopz_status_badge_class($job['status']) ?>"><?= htmlspecialchars($job['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                         <td><?= htmlspecialchars($job['priority_level'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars((float) $job['billed_amount'] > 0 ? 'RM' . number_format((float) $job['billed_amount'], 2) : 'Pending', ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
                                             <div class="jobs-actions">
                                                 <a class="btn btn-portal-secondary btn-sm" href="jobs.php?edit=<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
@@ -242,7 +254,7 @@ include __DIR__ . '/includes/sidebar.php';
 <?php endforeach; ?>
 <?php if ($jobs === []): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">No jobs available yet.</td>
+                                        <td colspan="8" class="text-center text-muted py-4">No jobs available yet.</td>
                                     </tr>
 <?php endif; ?>
                                 </tbody>
@@ -279,7 +291,15 @@ include __DIR__ . '/includes/sidebar.php';
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="customer_name">Customer</label>
-                                    <input class="form-control" id="customer_name" name="customer_name" type="text" value="<?= htmlspecialchars($jobForm['customer_name'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                    <select class="form-select" id="customer_name" name="customer_name" required>
+                                        <option value="">Select customer</option>
+<?php foreach ($customerOptions as $customer): ?>
+                                        <option value="<?= htmlspecialchars($customer['name'], ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['customer_name'] === $customer['name'] ? ' selected' : '' ?>><?= htmlspecialchars($customer['name'], ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+<?php if ($jobForm['customer_name'] !== '' && !in_array($jobForm['customer_name'], array_map(static fn (array $customer): string => $customer['name'], $customerOptions), true)): ?>
+                                        <option value="<?= htmlspecialchars($jobForm['customer_name'], ENT_QUOTES, 'UTF-8') ?>" selected><?= htmlspecialchars($jobForm['customer_name'] . ' (existing customer)', ENT_QUOTES, 'UTF-8') ?></option>
+<?php endif; ?>
+                                    </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="service_type">Service Type</label>

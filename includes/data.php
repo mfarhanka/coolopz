@@ -333,12 +333,21 @@ function coolopz_fetch_staff_users(): array
     return $statement->fetchAll();
 }
 
+function coolopz_fetch_customer_options(): array
+{
+    $statement = coolopz_db()->query(
+        'SELECT name FROM customers ORDER BY name ASC'
+    );
+
+    return $statement->fetchAll();
+}
+
 function coolopz_fetch_assignable_staff(): array
 {
     $statement = coolopz_db()->query(
         "SELECT id, full_name, role_name
          FROM users
-         WHERE role_name <> 'Operations Admin'
+         WHERE role_name LIKE 'Technician%'
          ORDER BY full_name ASC"
     );
 
