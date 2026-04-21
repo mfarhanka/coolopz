@@ -32,6 +32,32 @@ function coolopz_fetch_job_service_names(int $jobId): array
     return $statement->fetchAll(PDO::FETCH_COLUMN);
 }
 
+function coolopz_service_price_map(): array
+{
+    $statement = coolopz_db()->query('SELECT name, default_price FROM services');
+    $rows = $statement->fetchAll();
+
+    $priceMap = [];
+
+    foreach ($rows as $row) {
+        $priceMap[(string) $row['name']] = (float) $row['default_price'];
+    }
+
+    return $priceMap;
+}
+
+function coolopz_calculate_billed_amount(array $serviceNames): float
+{
+    $priceMap = coolopz_service_price_map();
+    $total = 0.0;
+
+    foreach (coolopz_normalize_service_names($serviceNames) as $serviceName) {
+        $total += $priceMap[$serviceName] ?? 0.0;
+    }
+
+    return $total;
+}
+
 function coolopz_replace_job_services(PDO $pdo, int $jobId, array $serviceNames): void
 {
     $deleteStatement = $pdo->prepare('DELETE FROM job_services WHERE job_id = :job_id');

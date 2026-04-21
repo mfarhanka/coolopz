@@ -12,6 +12,10 @@ $currentUserRole = $currentUser['role'] ?? 'Operations Admin';
 $userInitials = coolopz_user_initials($currentUserName);
 
 $services = coolopz_fetch_services();
+$servicePriceMap = [];
+foreach ($services as $service) {
+    $servicePriceMap[(string) $service['name']] = (float) $service['default_price'];
+}
 $serviceTypes = array_map(static fn (array $service): string => $service['name'], $services);
 $defaultServiceType = $serviceTypes[0] ?? '';
 $statuses = coolopz_job_statuses();
@@ -38,7 +42,7 @@ $jobForm = [
     'zone' => '',
     'status' => 'Queued',
     'priority_level' => 'Medium',
-    'billed_amount' => '',
+    'billed_amount' => $defaultServiceType !== '' ? number_format(coolopz_calculate_billed_amount([$defaultServiceType]), 2, '.', '') : '0.00',
     'notes' => '',
 ];
 
@@ -69,9 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'zone' => trim((string) ($_POST['zone'] ?? '')),
             'status' => trim((string) ($_POST['status'] ?? 'Queued')),
             'priority_level' => trim((string) ($_POST['priority_level'] ?? 'Medium')),
-            'billed_amount' => trim((string) ($_POST['billed_amount'] ?? '')),
+            'billed_amount' => '0.00',
             'notes' => trim((string) ($_POST['notes'] ?? '')),
         ];
+        $jobForm['billed_amount'] = number_format(coolopz_calculate_billed_amount($jobForm['service_types']), 2, '.', '');
         $allowedCustomers = array_map(static fn (array $customer): string => $customer['name'], $customerOptions);
         $allowedTechnicians = array_map(static fn (array $staffUser): string => $staffUser['full_name'], $staffTechnicians);
 
@@ -117,15 +122,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!in_array($jobForm['priority_level'], $priorities, true)) {
             $errorMessage = 'Select a valid priority level.';
             $shouldOpenJobModal = true;
-        } elseif ($jobForm['billed_amount'] !== '' && (!is_numeric($jobForm['billed_amount']) || (float) $jobForm['billed_amount'] < 0)) {
-            $errorMessage = 'Billed amount must be a valid positive number.';
-            $shouldOpenJobModal = true;
         } elseif ($action === 'update' && ($editJobId < 1 || $existingJob === null)) {
             $errorMessage = 'The job you are trying to update no longer exists.';
             $shouldOpenJobModal = true;
         } else {
             $jobPayload = $jobForm;
-            $jobPayload['billed_amount'] = number_format((float) ($jobForm['billed_amount'] !== '' ? $jobForm['billed_amount'] : '0'), 2, '.', '');
+            $jobPayload['billed_amount'] = number_format(coolopz_calculate_billed_amount($jobForm['service_types']), 2, '.', '');
 
             try {
                 if ($action === 'update') {
@@ -163,13 +165,15 @@ if ($editJobId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             'zone' => $editingJob['zone'],
             'status' => $editingJob['status'],
             'priority_level' => $editingJob['priority_level'],
-            'billed_amount' => (float) $editingJob['billed_amount'] > 0 ? number_format((float) $editingJob['billed_amount'], 2, '.', '') : '',
+            'billed_amount' => '0.00',
             'notes' => $editingJob['notes'],
         ];
 
         if ($jobForm['service_types'] === [] && $editingJob['service_type'] !== '') {
             $jobForm['service_types'] = coolopz_normalize_service_names(explode(',', $editingJob['service_type']));
         }
+
+        $jobForm['billed_amount'] = number_format(coolopz_calculate_billed_amount($jobForm['service_types']), 2, '.', '');
     }
 }
 
@@ -381,7 +385,8 @@ include __DIR__ . '/includes/sidebar.php';
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="billed_amount">Billed Amount</label>
-                                    <input class="form-control" id="billed_amount" name="billed_amount" type="number" min="0" step="0.01" value="<?= htmlspecialchars((string) $jobForm['billed_amount'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Add later if not billed yet">
+                                    <input class="form-control" id="billed_amount" name="billed_amount" type="text" value="<?= htmlspecialchars((string) $jobForm['billed_amount'], ENT_QUOTES, 'UTF-8') ?>" readonly>
+                                    <div class="form-text">Calculated automatically from the selected services.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="status">Status</label>
@@ -471,12 +476,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var addButton = document.getElementById('addServiceTypeButton');
     var selector = document.getElementById('service_type_selector');
     var table = document.getElementById('jobServiceTypesTable');
+    var billedAmountInput = document.getElementById('billed_amount');
+    var servicePriceMap = <?= json_encode($servicePriceMap, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
-    if (!addButton || !selector || !table) {
+    if (!addButton || !selector || !table || !billedAmountInput) {
         return;
     }
 
     var tableBody = table.querySelector('tbody');
+
+    function updateBilledAmount() {
+        var selectedInputs = tableBody.querySelectorAll('input[name="service_types[]"]');
+        var total = 0;
+
+        selectedInputs.forEach(function (input) {
+            total += Number(servicePriceMap[input.value] || 0);
+        });
+
+        billedAmountInput.value = total.toFixed(2);
+    }
 
     function removeEmptyRow() {
         var emptyRow = tableBody.querySelector('.job-service-types-empty-row');
@@ -510,6 +528,7 @@ document.addEventListener('DOMContentLoaded', function () {
             + '<input type="hidden" name="service_types[]" value="' + serviceType.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '"></td>'
             + '<td><button type="button" class="btn btn-outline-danger btn-sm" data-remove-service-type>Remove</button></td>';
         tableBody.appendChild(row);
+        updateBilledAmount();
     }
 
     addButton.addEventListener('click', function () {
@@ -529,7 +548,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         ensureEmptyRow();
+        updateBilledAmount();
     });
+
+    updateBilledAmount();
 });
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
