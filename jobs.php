@@ -30,6 +30,7 @@ $successMessage = match ($messageKey) {
     'created' => 'Job created successfully.',
     'updated' => 'Job updated successfully.',
     'deleted' => 'Job deleted successfully.',
+    'link-regenerated' => 'Client update link regenerated successfully.',
     default => '',
 };
 $shouldOpenJobModal = false;
@@ -63,7 +64,17 @@ $editJobId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? 'create');
 
-    if ($action === 'delete') {
+    if ($action === 'regenerate_client_link') {
+        $regenerateJobId = (int) ($_POST['job_id'] ?? 0);
+
+        if ($regenerateJobId < 1 || coolopz_find_job($regenerateJobId) === null) {
+            $errorMessage = 'The selected job could not be found.';
+        } else {
+            coolopz_regenerate_job_client_update_token($regenerateJobId);
+            header('Location: jobs.php?message=link-regenerated');
+            exit;
+        }
+    } elseif ($action === 'delete') {
         $deleteJobId = (int) ($_POST['job_id'] ?? 0);
 
         if ($deleteJobId < 1 || coolopz_find_job($deleteJobId) === null) {
@@ -144,6 +155,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $shouldOpenJobModal = true;
         } elseif ($jobForm['google_maps_url'] !== '' && filter_var($jobForm['google_maps_url'], FILTER_VALIDATE_URL) === false) {
             $errorMessage = 'Enter a valid Google Maps link.';
+            $shouldOpenJobModal = true;
+        } elseif (!coolopz_is_valid_phone_number($jobForm['person_in_charge_contact'])) {
+            $errorMessage = 'PIC contact must be a valid phone number.';
             $shouldOpenJobModal = true;
         } elseif ($action === 'update' && ($editJobId < 1 || $existingJob === null)) {
             $errorMessage = 'The job you are trying to update no longer exists.';
@@ -287,6 +301,7 @@ include __DIR__ . '/includes/sidebar.php';
                                 <tbody>
 <?php foreach ($jobs as $job): ?>
 <?php $clientUpdateUrl = coolopz_job_client_update_url((string) $job['client_update_token']); ?>
+<?php $clientWhatsappUrl = coolopz_job_client_whatsapp_url($job); ?>
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
@@ -316,6 +331,12 @@ include __DIR__ . '/includes/sidebar.php';
                                                 <a class="btn btn-portal-secondary btn-sm" href="jobs.php?edit=<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
                                                 <a class="btn btn-outline-primary btn-sm" href="<?= htmlspecialchars($clientUpdateUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Client Form</a>
                                                 <button type="button" class="btn btn-outline-secondary btn-sm" data-copy-client-link="<?= htmlspecialchars($clientUpdateUrl, ENT_QUOTES, 'UTF-8') ?>">Copy Link</button>
+                                                <a class="btn btn-outline-success btn-sm" href="<?= htmlspecialchars($clientWhatsappUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                                                <form method="post" class="m-0" onsubmit="return confirm('Regenerate the client link for this job? The old link will stop working.');">
+                                                    <input type="hidden" name="action" value="regenerate_client_link">
+                                                    <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                                    <button type="submit" class="btn btn-outline-warning btn-sm">Regenerate</button>
+                                                </form>
                                                 <form method="post" class="m-0" onsubmit="return confirm('Delete this job?');">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">
@@ -462,8 +483,8 @@ include __DIR__ . '/includes/sidebar.php';
                                     <input class="form-control" id="person_in_charge_name" name="person_in_charge_name" type="text" value="<?= htmlspecialchars($jobForm['person_in_charge_name'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="person_in_charge_contact">Person In Charge Contact</label>
-                                    <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="text" value="<?= htmlspecialchars($jobForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
+                                    <label class="form-label" for="person_in_charge_contact">PIC Phone Number</label>
+                                    <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="tel" inputmode="tel" value="<?= htmlspecialchars($jobForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional phone number">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="client_update_link">Client Update Link</label>
@@ -471,6 +492,11 @@ include __DIR__ . '/includes/sidebar.php';
                                     <div class="input-group">
                                         <input class="form-control" id="client_update_link" type="text" value="<?= htmlspecialchars(coolopz_job_client_update_url($jobForm['client_update_token']), ENT_QUOTES, 'UTF-8') ?>" readonly>
                                         <button type="button" class="btn btn-portal-secondary" data-copy-target="client_update_link">Copy</button>
+                                        <a class="btn btn-outline-success" href="<?= htmlspecialchars(coolopz_job_client_whatsapp_url([
+                                            'ticket_number' => $jobForm['ticket_number'],
+                                            'customer_name' => $jobForm['customer_name'],
+                                            'client_update_token' => $jobForm['client_update_token'],
+                                        ]), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a>
                                     </div>
                                     <div class="form-text">Send this unique link to the client so they can fill in the site details directly.</div>
 <?php else: ?>

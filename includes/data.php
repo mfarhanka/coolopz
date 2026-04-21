@@ -71,6 +71,32 @@ function coolopz_job_client_update_url(string $token): string
     return coolopz_app_url('job-client-update.php?token=' . urlencode($token));
 }
 
+function coolopz_job_client_whatsapp_url(array $job): string
+{
+    $jobToken = (string) ($job['client_update_token'] ?? '');
+    $jobTicket = (string) ($job['ticket_number'] ?? 'your service job');
+    $customerName = trim((string) ($job['customer_name'] ?? ''));
+    $greeting = $customerName !== '' ? 'Hi ' . $customerName . ',' : 'Hi,';
+    $message = $greeting . " Please update the site details for job " . $jobTicket . ': ' . coolopz_job_client_update_url($jobToken);
+
+    return 'https://wa.me/?text=' . rawurlencode($message);
+}
+
+function coolopz_is_valid_phone_number(string $phoneNumber): bool
+{
+    $trimmed = trim($phoneNumber);
+
+    if ($trimmed === '') {
+        return true;
+    }
+
+    if (str_contains($trimmed, '@')) {
+        return false;
+    }
+
+    return preg_match('/^\+?[0-9][0-9\s\-()]{5,}$/', $trimmed) === 1;
+}
+
 function coolopz_normalize_service_lines(array $serviceNames, array $servicePrices): array
 {
     $linesByName = [];
@@ -438,6 +464,19 @@ function coolopz_update_job_client_details(string $token, array $clientDetails):
         'person_in_charge_name' => $clientDetails['person_in_charge_name'],
         'person_in_charge_contact' => $clientDetails['person_in_charge_contact'],
     ]);
+}
+
+function coolopz_regenerate_job_client_update_token(int $jobId): string
+{
+    $pdo = coolopz_db();
+    $token = coolopz_issue_job_client_update_token($pdo);
+    $statement = $pdo->prepare('UPDATE jobs SET client_update_token = :token WHERE id = :id');
+    $statement->execute([
+        'id' => $jobId,
+        'token' => $token,
+    ]);
+
+    return $token;
 }
 
 function coolopz_fetch_customer_metrics(): array

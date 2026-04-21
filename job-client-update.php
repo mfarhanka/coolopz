@@ -38,6 +38,8 @@ if ($token === '') {
 
             if ($clientForm['google_maps_url'] !== '' && filter_var($clientForm['google_maps_url'], FILTER_VALIDATE_URL) === false) {
                 $errorMessage = 'Please enter a valid Google Maps link.';
+            } elseif (!coolopz_is_valid_phone_number($clientForm['person_in_charge_contact'])) {
+                $errorMessage = 'Please enter a valid phone number for the PIC contact.';
             } else {
                 coolopz_update_job_client_details($token, $clientForm);
                 $job = coolopz_find_job_by_client_token($token);
@@ -101,8 +103,8 @@ if ($token === '') {
                     <input class="form-control" id="person_in_charge_name" name="person_in_charge_name" type="text" value="<?= htmlspecialchars($clientForm['person_in_charge_name'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Contact person name">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="person_in_charge_contact">Person In Charge Contact</label>
-                    <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="text" value="<?= htmlspecialchars($clientForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Phone or email">
+                    <label class="form-label" for="person_in_charge_contact">PIC Phone Number</label>
+                    <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="tel" inputmode="tel" value="<?= htmlspecialchars($clientForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Phone number only">
                 </div>
                 <div class="col-12 d-flex gap-2">
                     <button type="submit" class="btn btn-portal-primary">Submit Details</button>
