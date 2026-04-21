@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE TABLE IF NOT EXISTS job_services (
     job_id INT UNSIGNED NOT NULL,
     service_name VARCHAR(120) NOT NULL,
+    line_price DECIMAL(10,2) NOT NULL DEFAULT 0,
     PRIMARY KEY (job_id, service_name),
     CONSTRAINT fk_job_services_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
 );
@@ -103,12 +104,13 @@ VALUES
     ('Repair', 180.00, 'General troubleshooting and repair work.'),
     ('Transport Fee', 50.00, 'Additional transport or outstation charge.')
 ON DUPLICATE KEY UPDATE
-    default_price = VALUES(default_price),
-    notes = VALUES(notes);
+    id = id;
 
-INSERT INTO job_services (job_id, service_name)
-SELECT id, service_type
+INSERT INTO job_services (job_id, service_name, line_price)
+SELECT jobs.id, jobs.service_type, COALESCE(services.default_price, 0)
 FROM jobs
-WHERE service_type <> ''
+LEFT JOIN services ON services.name = jobs.service_type
+WHERE jobs.service_type <> ''
 ON DUPLICATE KEY UPDATE
-    service_name = VALUES(service_name);
+    service_name = VALUES(service_name),
+    line_price = VALUES(line_price);

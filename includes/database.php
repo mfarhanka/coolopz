@@ -70,9 +70,7 @@ function coolopz_ensure_services_table(PDO $pdo): void
     $statement = $pdo->prepare(
         'INSERT INTO services (name, default_price, notes)
          VALUES (:name, :default_price, :notes)
-         ON DUPLICATE KEY UPDATE
-             default_price = VALUES(default_price),
-             notes = VALUES(notes)'
+         ON DUPLICATE KEY UPDATE id = id'
     );
 
     foreach (coolopz_default_services() as $service) {
@@ -98,18 +96,60 @@ function coolopz_ensure_job_services_table(PDO $pdo): void
         'CREATE TABLE IF NOT EXISTS job_services (
             job_id INT UNSIGNED NOT NULL,
             service_name VARCHAR(120) NOT NULL,
+            line_price DECIMAL(10,2) NOT NULL DEFAULT 0,
             PRIMARY KEY (job_id, service_name),
             CONSTRAINT fk_job_services_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
         )'
     );
 
+    $columnStatement = $pdo->prepare(
+        'SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = :table_name
+           AND COLUMN_NAME = :column_name
+         LIMIT 1'
+    );
+    $columnStatement->execute([
+        'table_name' => 'job_services',
+        'column_name' => 'line_price',
+    ]);
+
+    if ($columnStatement->fetch() === false) {
+        $pdo->exec("ALTER TABLE job_services ADD COLUMN line_price DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER service_name");
+    }
+
     $jobs = $pdo->query('SELECT id, service_type FROM jobs')->fetchAll();
     $existingCounts = $pdo->query('SELECT job_id, COUNT(*) AS total FROM job_services GROUP BY job_id')->fetchAll(PDO::FETCH_KEY_PAIR);
-    $insertStatement = $pdo->prepare('INSERT IGNORE INTO job_services (job_id, service_name) VALUES (:job_id, :service_name)');
+    $servicePriceRows = $pdo->query('SELECT name, default_price FROM services')->fetchAll();
+    $servicePriceMap = [];
+    foreach ($servicePriceRows as $row) {
+        $servicePriceMap[(string) $row['name']] = (float) $row['default_price'];
+    }
+
+    $insertStatement = $pdo->prepare(
+        'INSERT IGNORE INTO job_services (job_id, service_name, line_price) VALUES (:job_id, :service_name, :line_price)'
+    );
+    $backfillPriceStatement = $pdo->prepare(
+        'UPDATE job_services
+         SET line_price = :line_price
+         WHERE job_id = :job_id
+           AND service_name = :service_name
+           AND line_price = 0'
+    );
 
     foreach ($jobs as $job) {
         $jobId = (int) $job['id'];
         if (($existingCounts[$jobId] ?? 0) > 0) {
+            $jobServiceNames = array_filter(array_map('trim', explode(',', (string) ($job['service_type'] ?? ''))), static fn (string $name): bool => $name !== '');
+            foreach (array_values(array_unique($jobServiceNames)) as $serviceName) {
+                $backfillPriceStatement->execute([
+                    'job_id' => $jobId,
+                    'service_name' => $serviceName,
+                    'line_price' => $servicePriceMap[$serviceName] ?? 0,
+                ]);
+            }
+
             continue;
         }
 
@@ -119,6 +159,7 @@ function coolopz_ensure_job_services_table(PDO $pdo): void
             $insertStatement->execute([
                 'job_id' => $jobId,
                 'service_name' => $serviceName,
+                'line_price' => $servicePriceMap[$serviceName] ?? 0,
             ]);
         }
     }

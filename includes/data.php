@@ -22,14 +22,35 @@ function coolopz_service_names_summary(array $serviceNames): string
     return implode(', ', coolopz_normalize_service_names($serviceNames));
 }
 
-function coolopz_fetch_job_service_names(int $jobId): array
+function coolopz_normalize_service_lines(array $serviceNames, array $servicePrices): array
+{
+    $linesByName = [];
+
+    foreach ($serviceNames as $index => $serviceName) {
+        $normalizedName = trim((string) $serviceName);
+        if ($normalizedName === '') {
+            continue;
+        }
+
+        $rawPrice = $servicePrices[$index] ?? 0;
+        $linePrice = is_numeric((string) $rawPrice) ? max(0, (float) $rawPrice) : 0.0;
+        $linesByName[$normalizedName] = [
+            'service_name' => $normalizedName,
+            'line_price' => $linePrice,
+        ];
+    }
+
+    return array_values($linesByName);
+}
+
+function coolopz_fetch_job_service_lines(int $jobId): array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT service_name FROM job_services WHERE job_id = :job_id ORDER BY service_name ASC'
+        'SELECT service_name, line_price FROM job_services WHERE job_id = :job_id ORDER BY service_name ASC'
     );
     $statement->execute(['job_id' => $jobId]);
 
-    return $statement->fetchAll(PDO::FETCH_COLUMN);
+    return $statement->fetchAll();
 }
 
 function coolopz_service_price_map(): array
@@ -46,31 +67,32 @@ function coolopz_service_price_map(): array
     return $priceMap;
 }
 
-function coolopz_calculate_billed_amount(array $serviceNames): float
+function coolopz_calculate_billed_amount(array $serviceLines): float
 {
-    $priceMap = coolopz_service_price_map();
     $total = 0.0;
 
-    foreach (coolopz_normalize_service_names($serviceNames) as $serviceName) {
-        $total += $priceMap[$serviceName] ?? 0.0;
+    foreach ($serviceLines as $serviceLine) {
+        $rawLinePrice = $serviceLine['line_price'] ?? 0;
+        $total += is_numeric((string) $rawLinePrice) ? max(0, (float) $rawLinePrice) : 0.0;
     }
 
     return $total;
 }
 
-function coolopz_replace_job_services(PDO $pdo, int $jobId, array $serviceNames): void
+function coolopz_replace_job_services(PDO $pdo, int $jobId, array $serviceLines): void
 {
     $deleteStatement = $pdo->prepare('DELETE FROM job_services WHERE job_id = :job_id');
     $deleteStatement->execute(['job_id' => $jobId]);
 
     $insertStatement = $pdo->prepare(
-        'INSERT INTO job_services (job_id, service_name) VALUES (:job_id, :service_name)'
+        'INSERT INTO job_services (job_id, service_name, line_price) VALUES (:job_id, :service_name, :line_price)'
     );
 
-    foreach (coolopz_normalize_service_names($serviceNames) as $serviceName) {
+    foreach ($serviceLines as $serviceLine) {
         $insertStatement->execute([
             'job_id' => $jobId,
-            'service_name' => $serviceName,
+            'service_name' => $serviceLine['service_name'],
+            'line_price' => number_format((float) $serviceLine['line_price'], 2, '.', ''),
         ]);
     }
 }
@@ -234,7 +256,7 @@ function coolopz_create_job(array $jobData): void
         $statement->execute([
             'ticket_number' => $jobData['ticket_number'],
             'customer_name' => $jobData['customer_name'],
-            'service_type' => coolopz_service_names_summary($jobData['service_types']),
+            'service_type' => coolopz_service_names_summary(array_column($jobData['service_lines'], 'service_name')),
             'technician_team' => $jobData['technician_team'],
             'zone' => $jobData['zone'],
             'status' => $jobData['status'],
@@ -243,7 +265,7 @@ function coolopz_create_job(array $jobData): void
             'notes' => $jobData['notes'],
         ]);
 
-        coolopz_replace_job_services($pdo, (int) $pdo->lastInsertId(), $jobData['service_types']);
+        coolopz_replace_job_services($pdo, (int) $pdo->lastInsertId(), $jobData['service_lines']);
         $pdo->commit();
     } catch (Throwable $exception) {
         $pdo->rollBack();
@@ -275,7 +297,7 @@ function coolopz_update_job(int $jobId, array $jobData): void
             'id' => $jobId,
             'ticket_number' => $jobData['ticket_number'],
             'customer_name' => $jobData['customer_name'],
-            'service_type' => coolopz_service_names_summary($jobData['service_types']),
+            'service_type' => coolopz_service_names_summary(array_column($jobData['service_lines'], 'service_name')),
             'technician_team' => $jobData['technician_team'],
             'zone' => $jobData['zone'],
             'status' => $jobData['status'],
@@ -284,7 +306,7 @@ function coolopz_update_job(int $jobId, array $jobData): void
             'notes' => $jobData['notes'],
         ]);
 
-        coolopz_replace_job_services($pdo, $jobId, $jobData['service_types']);
+        coolopz_replace_job_services($pdo, $jobId, $jobData['service_lines']);
         $pdo->commit();
     } catch (Throwable $exception) {
         $pdo->rollBack();
