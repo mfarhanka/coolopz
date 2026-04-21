@@ -44,7 +44,6 @@ $jobForm = [
     ]] : [],
     'technician_team' => '',
     'attending_technicians' => [],
-    'zone' => '',
     'site_address' => '',
     'google_maps_url' => '',
     'person_in_charge_contact' => '',
@@ -85,7 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ),
             'technician_team' => trim((string) ($_POST['technician_team'] ?? '')),
             'attending_technicians' => coolopz_normalize_technician_names((array) ($_POST['attending_technicians'] ?? [])),
-            'zone' => trim((string) ($_POST['zone'] ?? '')),
             'site_address' => trim((string) ($_POST['site_address'] ?? '')),
             'google_maps_url' => trim((string) ($_POST['google_maps_url'] ?? '')),
             'person_in_charge_contact' => trim((string) ($_POST['person_in_charge_contact'] ?? '')),
@@ -184,7 +182,6 @@ if ($editJobId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             'service_lines' => coolopz_fetch_job_service_lines((int) $editingJob['id']),
             'technician_team' => $editingJob['technician_team'],
             'attending_technicians' => coolopz_parse_summary_names($editingJob['attending_technicians'] ?? ''),
-            'zone' => $editingJob['zone'],
             'site_address' => $editingJob['site_address'] ?? '',
             'google_maps_url' => $editingJob['google_maps_url'] ?? '',
             'person_in_charge_contact' => $editingJob['person_in_charge_contact'] ?? '',
@@ -291,9 +288,10 @@ include __DIR__ . '/includes/sidebar.php';
                                         </td>
                                         <td>
                                             <strong class="d-block"><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></strong>
-                                            <span class="subtle-note d-block"><?= htmlspecialchars($job['zone'] !== '' ? $job['zone'] : 'No zone assigned', ENT_QUOTES, 'UTF-8') ?></span>
 <?php if (($job['site_address'] ?? '') !== ''): ?>
                                             <span class="subtle-note d-block"><?= htmlspecialchars($job['site_address'], ENT_QUOTES, 'UTF-8') ?></span>
+<?php else: ?>
+                                            <span class="subtle-note d-block">No site address added</span>
 <?php endif; ?>
 <?php if (($job['google_maps_url'] ?? '') !== ''): ?>
                                             <a class="subtle-note" href="<?= htmlspecialchars($job['google_maps_url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Open map</a>
@@ -441,10 +439,6 @@ include __DIR__ . '/includes/sidebar.php';
 <?php endforeach; ?>
                                     </select>
                                     <div class="form-text">Select one or more technicians who will attend this job.</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="zone">Zone</label>
-                                    <input class="form-control" id="zone" name="zone" type="text" value="<?= htmlspecialchars($jobForm['zone'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="site_address">Site Address</label>

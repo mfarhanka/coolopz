@@ -177,7 +177,7 @@ function coolopz_ensure_job_columns(PDO $pdo): void
 
     $requiredColumns = [
         'attending_technicians' => "ALTER TABLE jobs ADD COLUMN attending_technicians VARCHAR(255) NOT NULL DEFAULT '' AFTER technician_team",
-        'site_address' => "ALTER TABLE jobs ADD COLUMN site_address VARCHAR(255) NOT NULL DEFAULT '' AFTER zone",
+        'site_address' => "ALTER TABLE jobs ADD COLUMN site_address VARCHAR(255) NOT NULL DEFAULT '' AFTER attending_technicians",
         'google_maps_url' => "ALTER TABLE jobs ADD COLUMN google_maps_url VARCHAR(255) NOT NULL DEFAULT '' AFTER site_address",
         'person_in_charge_contact' => "ALTER TABLE jobs ADD COLUMN person_in_charge_contact VARCHAR(190) NOT NULL DEFAULT '' AFTER google_maps_url",
     ];
