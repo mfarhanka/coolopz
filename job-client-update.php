@@ -29,16 +29,17 @@ if ($token === '') {
         ];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $rawPersonInChargeContact = trim((string) ($_POST['person_in_charge_contact'] ?? ''));
             $clientForm = [
                 'site_address' => trim((string) ($_POST['site_address'] ?? '')),
                 'google_maps_url' => trim((string) ($_POST['google_maps_url'] ?? '')),
                 'person_in_charge_name' => trim((string) ($_POST['person_in_charge_name'] ?? '')),
-                'person_in_charge_contact' => trim((string) ($_POST['person_in_charge_contact'] ?? '')),
+                'person_in_charge_contact' => coolopz_normalize_phone_number($rawPersonInChargeContact),
             ];
 
             if ($clientForm['google_maps_url'] !== '' && filter_var($clientForm['google_maps_url'], FILTER_VALIDATE_URL) === false) {
                 $errorMessage = 'Please enter a valid Google Maps link.';
-            } elseif (!coolopz_is_valid_phone_number($clientForm['person_in_charge_contact'])) {
+            } elseif (!coolopz_is_valid_phone_number($rawPersonInChargeContact)) {
                 $errorMessage = 'Please enter a valid phone number for the PIC contact.';
             } else {
                 coolopz_update_job_client_details($token, $clientForm);
@@ -115,5 +116,23 @@ if ($token === '') {
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var picPhoneInput = document.getElementById('person_in_charge_contact');
+
+        if (!(picPhoneInput instanceof HTMLInputElement)) {
+            return;
+        }
+
+        var normalizePhone = function () {
+            picPhoneInput.value = picPhoneInput.value.replace(/\D+/g, '');
+        };
+
+        picPhoneInput.addEventListener('input', normalizePhone);
+        picPhoneInput.addEventListener('paste', function () {
+            setTimeout(normalizePhone, 0);
+        });
+    });
+    </script>
 </body>
 </html>

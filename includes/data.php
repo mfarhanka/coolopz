@@ -82,6 +82,11 @@ function coolopz_job_client_whatsapp_url(array $job): string
     return 'https://wa.me/?text=' . rawurlencode($message);
 }
 
+function coolopz_normalize_phone_number(string $phoneNumber): string
+{
+    return preg_replace('/\D+/', '', trim($phoneNumber)) ?? '';
+}
+
 function coolopz_is_valid_phone_number(string $phoneNumber): bool
 {
     $trimmed = trim($phoneNumber);
@@ -90,11 +95,11 @@ function coolopz_is_valid_phone_number(string $phoneNumber): bool
         return true;
     }
 
-    if (str_contains($trimmed, '@')) {
+    if (preg_match('/[A-Za-z@]/', $trimmed) === 1) {
         return false;
     }
 
-    return preg_match('/^\+?[0-9][0-9\s\-()]{5,}$/', $trimmed) === 1;
+    return preg_match('/^\d{6,}$/', coolopz_normalize_phone_number($trimmed)) === 1;
 }
 
 function coolopz_normalize_service_lines(array $serviceNames, array $servicePrices): array
@@ -334,6 +339,7 @@ function coolopz_find_job(int $jobId): ?array
 function coolopz_create_job(array $jobData): void
 {
     $pdo = coolopz_db();
+    $personInChargeContact = coolopz_normalize_phone_number((string) ($jobData['person_in_charge_contact'] ?? ''));
     $statement = $pdo->prepare(
         'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, attending_technicians, site_address, google_maps_url, person_in_charge_name, person_in_charge_contact, client_update_token, status, priority_level, billed_amount, notes)
          VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :attending_technicians, :site_address, :google_maps_url, :person_in_charge_name, :person_in_charge_contact, :client_update_token, :status, :priority_level, :billed_amount, :notes)'
@@ -351,7 +357,7 @@ function coolopz_create_job(array $jobData): void
             'site_address' => $jobData['site_address'],
             'google_maps_url' => $jobData['google_maps_url'],
             'person_in_charge_name' => $jobData['person_in_charge_name'],
-            'person_in_charge_contact' => $jobData['person_in_charge_contact'],
+            'person_in_charge_contact' => $personInChargeContact,
             'client_update_token' => $jobData['client_update_token'] !== '' ? $jobData['client_update_token'] : coolopz_issue_job_client_update_token($pdo),
             'status' => $jobData['status'],
             'priority_level' => $jobData['priority_level'],
@@ -370,6 +376,7 @@ function coolopz_create_job(array $jobData): void
 function coolopz_update_job(int $jobId, array $jobData): void
 {
     $pdo = coolopz_db();
+    $personInChargeContact = coolopz_normalize_phone_number((string) ($jobData['person_in_charge_contact'] ?? ''));
     $statement = $pdo->prepare(
         'UPDATE jobs
          SET ticket_number = :ticket_number,
@@ -402,7 +409,7 @@ function coolopz_update_job(int $jobId, array $jobData): void
             'site_address' => $jobData['site_address'],
             'google_maps_url' => $jobData['google_maps_url'],
             'person_in_charge_name' => $jobData['person_in_charge_name'],
-            'person_in_charge_contact' => $jobData['person_in_charge_contact'],
+            'person_in_charge_contact' => $personInChargeContact,
             'client_update_token' => $jobData['client_update_token'] !== '' ? $jobData['client_update_token'] : coolopz_issue_job_client_update_token($pdo),
             'status' => $jobData['status'],
             'priority_level' => $jobData['priority_level'],
@@ -448,6 +455,7 @@ function coolopz_find_job_by_client_token(string $token): ?array
 
 function coolopz_update_job_client_details(string $token, array $clientDetails): void
 {
+    $personInChargeContact = coolopz_normalize_phone_number((string) ($clientDetails['person_in_charge_contact'] ?? ''));
     $statement = coolopz_db()->prepare(
         'UPDATE jobs
          SET site_address = :site_address,
@@ -462,7 +470,7 @@ function coolopz_update_job_client_details(string $token, array $clientDetails):
         'site_address' => $clientDetails['site_address'],
         'google_maps_url' => $clientDetails['google_maps_url'],
         'person_in_charge_name' => $clientDetails['person_in_charge_name'],
-        'person_in_charge_contact' => $clientDetails['person_in_charge_contact'],
+        'person_in_charge_contact' => $personInChargeContact,
     ]);
 }
 
@@ -504,7 +512,7 @@ function coolopz_fetch_customers(): array
 
 function coolopz_customer_phone_lookup_key(string $phoneNumber): string
 {
-    return preg_replace('/\D+/', '', trim($phoneNumber)) ?? '';
+    return coolopz_normalize_phone_number($phoneNumber);
 }
 
 function coolopz_normalize_customer_phone_number(string $phoneNumber): string
