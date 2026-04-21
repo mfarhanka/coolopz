@@ -32,12 +32,15 @@ CREATE TABLE IF NOT EXISTS jobs (
     attending_technicians VARCHAR(255) NOT NULL DEFAULT '',
     site_address VARCHAR(255) NOT NULL DEFAULT '',
     google_maps_url VARCHAR(255) NOT NULL DEFAULT '',
+    person_in_charge_name VARCHAR(120) NOT NULL DEFAULT '',
     person_in_charge_contact VARCHAR(190) NOT NULL DEFAULT '',
+    client_update_token VARCHAR(64) NOT NULL DEFAULT '',
     status VARCHAR(40) NOT NULL,
     priority_level VARCHAR(40) NOT NULL,
     billed_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
     notes VARCHAR(255) NOT NULL DEFAULT '',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_jobs_client_update_token (client_update_token)
 );
 
 CREATE TABLE IF NOT EXISTS job_services (
@@ -80,16 +83,16 @@ ON DUPLICATE KEY UPDATE
     renewal_status = VALUES(renewal_status),
     rating = VALUES(rating);
 
-INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, attending_technicians, site_address, google_maps_url, person_in_charge_contact, status, priority_level, billed_amount, notes)
+INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, attending_technicians, site_address, google_maps_url, person_in_charge_name, person_in_charge_contact, client_update_token, status, priority_level, billed_amount, notes)
 VALUES
-    ('#JOB-2048', 'Northpoint Suites', 'Repair', 'Team Alpha', 'Team Alpha, Team Delta', 'Northpoint Suites, Jalan Sultan Ismail, Kuala Lumpur', 'https://maps.google.com/?q=Northpoint+Suites+Kuala+Lumpur', 'Farid 012-778 3301', 'Urgent', 'High', 2800.00, 'Awaiting compressor parts after diagnosis.'),
-    ('#JOB-2045', 'Pelita Food Hall', 'Maintenance', 'Team Delta', 'Team Delta', 'Pelita Food Hall, Seksyen 13, Shah Alam', 'https://maps.google.com/?q=Pelita+Food+Hall+Shah+Alam', 'Aina 014-624 8190', 'In Progress', 'Medium', 1800.00, 'Routine maintenance in progress.'),
-    ('#JOB-2042', 'Riverview Co-Working', 'Installation', 'Team Sigma', 'Team Sigma, Team Nova', 'Riverview Co-Working, Presint 5, Putrajaya', 'https://maps.google.com/?q=Riverview+Co-Working+Putrajaya', 'Hakim 013-902 1844', 'Queued', 'Medium', 4200.00, 'Installation queued for afternoon handover.'),
-    ('#JOB-2039', 'Harbor Dental Clinic', 'Gas Top-Up', 'Team Nova', 'Team Nova', 'Harbor Dental Clinic, Jalan Ampang, Kuala Lumpur', 'https://maps.google.com/?q=Harbor+Dental+Clinic+Ampang', 'Dr. Mei 017-338 4500', 'Completed', 'Low', 950.00, 'Completed and signed off.'),
-    ('#JOB-2038', 'Meridian Office Park', 'Preventive Maintenance', 'Team Orion', 'Team Orion', 'Meridian Office Park, Jalan Pinang, Kuala Lumpur', 'https://maps.google.com/?q=Meridian+Office+Park+KLCC', 'Nadia 011-2671 2208', 'Completed', 'Low', 3600.00, 'Monthly service completed.'),
-    ('#JOB-2037', 'Bloom Pediatric Center', 'Repair', 'Team Echo', 'Team Echo, Team Alpha', 'Bloom Pediatric Center, Damansara Utama, Petaling Jaya', 'https://maps.google.com/?q=Bloom+Pediatric+Center+Damansara', 'Sara 019-880 4412', 'In Progress', 'High', 2200.00, 'Electrical fault under inspection.'),
-    ('#JOB-2036', 'Casa Bayu Residence', 'Maintenance', 'Team Nova', 'Team Nova', 'Casa Bayu Residence, Bandar Tun Hussein Onn, Cheras', 'https://maps.google.com/?q=Casa+Bayu+Residence+Cheras', 'Mr. Lim 016-422 3009', 'Queued', 'Low', 650.00, 'Scheduled maintenance visit.'),
-    ('#JOB-2035', 'Skyline Residence', 'Repair', 'Team Delta', 'Team Delta, Team Echo', 'Skyline Residence, Mont Kiara, Kuala Lumpur', 'https://maps.google.com/?q=Skyline+Residence+Mont+Kiara', 'Jasmine 012-991 4088', 'Urgent', 'High', 3100.00, 'Urgent outage reported by management.')
+    ('#JOB-2048', 'Northpoint Suites', 'Repair', 'Team Alpha', 'Team Alpha, Team Delta', 'Northpoint Suites, Jalan Sultan Ismail, Kuala Lumpur', 'https://maps.google.com/?q=Northpoint+Suites+Kuala+Lumpur', 'Farid', '012-778 3301', 'clientjob2048a4f8c1', 'Urgent', 'High', 2800.00, 'Awaiting compressor parts after diagnosis.'),
+    ('#JOB-2045', 'Pelita Food Hall', 'Maintenance', 'Team Delta', 'Team Delta', 'Pelita Food Hall, Seksyen 13, Shah Alam', 'https://maps.google.com/?q=Pelita+Food+Hall+Shah+Alam', 'Aina', '014-624 8190', 'clientjob2045b6d9e2', 'In Progress', 'Medium', 1800.00, 'Routine maintenance in progress.'),
+    ('#JOB-2042', 'Riverview Co-Working', 'Installation', 'Team Sigma', 'Team Sigma, Team Nova', 'Riverview Co-Working, Presint 5, Putrajaya', 'https://maps.google.com/?q=Riverview+Co-Working+Putrajaya', 'Hakim', '013-902 1844', 'clientjob2042c7f1a3', 'Queued', 'Medium', 4200.00, 'Installation queued for afternoon handover.'),
+    ('#JOB-2039', 'Harbor Dental Clinic', 'Gas Top-Up', 'Team Nova', 'Team Nova', 'Harbor Dental Clinic, Jalan Ampang, Kuala Lumpur', 'https://maps.google.com/?q=Harbor+Dental+Clinic+Ampang', 'Dr. Mei', '017-338 4500', 'clientjob2039d8b2f4', 'Completed', 'Low', 950.00, 'Completed and signed off.'),
+    ('#JOB-2038', 'Meridian Office Park', 'Preventive Maintenance', 'Team Orion', 'Team Orion', 'Meridian Office Park, Jalan Pinang, Kuala Lumpur', 'https://maps.google.com/?q=Meridian+Office+Park+KLCC', 'Nadia', '011-2671 2208', 'clientjob2038e9c3a5', 'Completed', 'Low', 3600.00, 'Monthly service completed.'),
+    ('#JOB-2037', 'Bloom Pediatric Center', 'Repair', 'Team Echo', 'Team Echo, Team Alpha', 'Bloom Pediatric Center, Damansara Utama, Petaling Jaya', 'https://maps.google.com/?q=Bloom+Pediatric+Center+Damansara', 'Sara', '019-880 4412', 'clientjob2037f1d4b6', 'In Progress', 'High', 2200.00, 'Electrical fault under inspection.'),
+    ('#JOB-2036', 'Casa Bayu Residence', 'Maintenance', 'Team Nova', 'Team Nova', 'Casa Bayu Residence, Bandar Tun Hussein Onn, Cheras', 'https://maps.google.com/?q=Casa+Bayu+Residence+Cheras', 'Mr. Lim', '016-422 3009', 'clientjob2036a2e5c7', 'Queued', 'Low', 650.00, 'Scheduled maintenance visit.'),
+    ('#JOB-2035', 'Skyline Residence', 'Repair', 'Team Delta', 'Team Delta, Team Echo', 'Skyline Residence, Mont Kiara, Kuala Lumpur', 'https://maps.google.com/?q=Skyline+Residence+Mont+Kiara', 'Jasmine', '012-991 4088', 'clientjob2035b3f6d8', 'Urgent', 'High', 3100.00, 'Urgent outage reported by management.')
 ON DUPLICATE KEY UPDATE
     customer_name = VALUES(customer_name),
     service_type = VALUES(service_type),
@@ -97,7 +100,9 @@ ON DUPLICATE KEY UPDATE
     attending_technicians = VALUES(attending_technicians),
     site_address = VALUES(site_address),
     google_maps_url = VALUES(google_maps_url),
+    person_in_charge_name = VALUES(person_in_charge_name),
     person_in_charge_contact = VALUES(person_in_charge_contact),
+    client_update_token = VALUES(client_update_token),
     status = VALUES(status),
     priority_level = VALUES(priority_level),
     billed_amount = VALUES(billed_amount),

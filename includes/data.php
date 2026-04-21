@@ -50,6 +50,27 @@ function coolopz_parse_summary_names(?string $summary): array
     return coolopz_normalize_technician_names(explode(',', $summary));
 }
 
+function coolopz_app_url(string $path = ''): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+    $basePath = str_replace('\\', '/', dirname($scriptName));
+
+    if ($basePath === '/' || $basePath === '\\' || $basePath === '.') {
+        $basePath = '';
+    }
+
+    $normalizedPath = ltrim($path, '/');
+
+    return rtrim($scheme . '://' . $host . $basePath, '/') . ($normalizedPath !== '' ? '/' . $normalizedPath : '');
+}
+
+function coolopz_job_client_update_url(string $token): string
+{
+    return coolopz_app_url('job-client-update.php?token=' . urlencode($token));
+}
+
 function coolopz_normalize_service_lines(array $serviceNames, array $servicePrices): array
 {
     $linesByName = [];
@@ -155,8 +176,11 @@ function coolopz_fetch_priority_jobs(int $limit = 4): array
                 jobs.customer_name,
                 COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
                 jobs.technician_team,
-            jobs.attending_technicians,
-            jobs.site_address,
+                jobs.attending_technicians,
+                jobs.site_address,
+                jobs.person_in_charge_name,
+                jobs.person_in_charge_contact,
+                jobs.client_update_token,
                 jobs.status,
                 jobs.priority_level
          FROM jobs
@@ -231,10 +255,12 @@ function coolopz_fetch_jobs(): array
                 jobs.customer_name,
                 COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
                 jobs.technician_team,
-            jobs.attending_technicians,
-            jobs.site_address,
-            jobs.google_maps_url,
-            jobs.person_in_charge_contact,
+                jobs.attending_technicians,
+                jobs.site_address,
+                jobs.google_maps_url,
+                jobs.person_in_charge_name,
+                jobs.person_in_charge_contact,
+                jobs.client_update_token,
                 jobs.status,
                 jobs.priority_level,
                 jobs.billed_amount,
@@ -257,10 +283,12 @@ function coolopz_find_job(int $jobId): ?array
                 jobs.customer_name,
                 COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
                 jobs.technician_team,
-            jobs.attending_technicians,
-            jobs.site_address,
-            jobs.google_maps_url,
-            jobs.person_in_charge_contact,
+                jobs.attending_technicians,
+                jobs.site_address,
+                jobs.google_maps_url,
+                jobs.person_in_charge_name,
+                jobs.person_in_charge_contact,
+                jobs.client_update_token,
                 jobs.status,
                 jobs.priority_level,
                 jobs.billed_amount,
@@ -281,8 +309,8 @@ function coolopz_create_job(array $jobData): void
 {
     $pdo = coolopz_db();
     $statement = $pdo->prepare(
-        'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, attending_technicians, site_address, google_maps_url, person_in_charge_contact, status, priority_level, billed_amount, notes)
-         VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :attending_technicians, :site_address, :google_maps_url, :person_in_charge_contact, :status, :priority_level, :billed_amount, :notes)'
+        'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, attending_technicians, site_address, google_maps_url, person_in_charge_name, person_in_charge_contact, client_update_token, status, priority_level, billed_amount, notes)
+         VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :attending_technicians, :site_address, :google_maps_url, :person_in_charge_name, :person_in_charge_contact, :client_update_token, :status, :priority_level, :billed_amount, :notes)'
     );
 
     $pdo->beginTransaction();
@@ -296,7 +324,9 @@ function coolopz_create_job(array $jobData): void
             'attending_technicians' => coolopz_technician_names_summary($jobData['attending_technicians']),
             'site_address' => $jobData['site_address'],
             'google_maps_url' => $jobData['google_maps_url'],
+            'person_in_charge_name' => $jobData['person_in_charge_name'],
             'person_in_charge_contact' => $jobData['person_in_charge_contact'],
+            'client_update_token' => $jobData['client_update_token'] !== '' ? $jobData['client_update_token'] : coolopz_issue_job_client_update_token($pdo),
             'status' => $jobData['status'],
             'priority_level' => $jobData['priority_level'],
             'billed_amount' => $jobData['billed_amount'],
@@ -323,7 +353,9 @@ function coolopz_update_job(int $jobId, array $jobData): void
              attending_technicians = :attending_technicians,
              site_address = :site_address,
              google_maps_url = :google_maps_url,
+             person_in_charge_name = :person_in_charge_name,
              person_in_charge_contact = :person_in_charge_contact,
+             client_update_token = :client_update_token,
              status = :status,
              priority_level = :priority_level,
              billed_amount = :billed_amount,
@@ -343,7 +375,9 @@ function coolopz_update_job(int $jobId, array $jobData): void
             'attending_technicians' => coolopz_technician_names_summary($jobData['attending_technicians']),
             'site_address' => $jobData['site_address'],
             'google_maps_url' => $jobData['google_maps_url'],
+            'person_in_charge_name' => $jobData['person_in_charge_name'],
             'person_in_charge_contact' => $jobData['person_in_charge_contact'],
+            'client_update_token' => $jobData['client_update_token'] !== '' ? $jobData['client_update_token'] : coolopz_issue_job_client_update_token($pdo),
             'status' => $jobData['status'],
             'priority_level' => $jobData['priority_level'],
             'billed_amount' => $jobData['billed_amount'],
@@ -362,6 +396,48 @@ function coolopz_delete_job(int $jobId): void
 {
     $statement = coolopz_db()->prepare('DELETE FROM jobs WHERE id = :id');
     $statement->execute(['id' => $jobId]);
+}
+
+function coolopz_find_job_by_client_token(string $token): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id,
+                ticket_number,
+                customer_name,
+                service_type,
+                site_address,
+                google_maps_url,
+                person_in_charge_name,
+                person_in_charge_contact,
+                client_update_token
+         FROM jobs
+         WHERE client_update_token = :token
+         LIMIT 1'
+    );
+    $statement->execute(['token' => $token]);
+    $job = $statement->fetch();
+
+    return $job === false ? null : $job;
+}
+
+function coolopz_update_job_client_details(string $token, array $clientDetails): void
+{
+    $statement = coolopz_db()->prepare(
+        'UPDATE jobs
+         SET site_address = :site_address,
+             google_maps_url = :google_maps_url,
+             person_in_charge_name = :person_in_charge_name,
+             person_in_charge_contact = :person_in_charge_contact
+         WHERE client_update_token = :token'
+    );
+
+    $statement->execute([
+        'token' => $token,
+        'site_address' => $clientDetails['site_address'],
+        'google_maps_url' => $clientDetails['google_maps_url'],
+        'person_in_charge_name' => $clientDetails['person_in_charge_name'],
+        'person_in_charge_contact' => $clientDetails['person_in_charge_contact'],
+    ]);
 }
 
 function coolopz_fetch_customer_metrics(): array

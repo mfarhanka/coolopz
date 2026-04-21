@@ -46,7 +46,9 @@ $jobForm = [
     'attending_technicians' => [],
     'site_address' => '',
     'google_maps_url' => '',
+    'person_in_charge_name' => '',
     'person_in_charge_contact' => '',
+    'client_update_token' => '',
     'status' => 'Queued',
     'priority_level' => 'Medium',
     'billed_amount' => $defaultServiceType !== '' ? number_format(coolopz_calculate_billed_amount([[
@@ -86,7 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'attending_technicians' => coolopz_normalize_technician_names((array) ($_POST['attending_technicians'] ?? [])),
             'site_address' => trim((string) ($_POST['site_address'] ?? '')),
             'google_maps_url' => trim((string) ($_POST['google_maps_url'] ?? '')),
+            'person_in_charge_name' => trim((string) ($_POST['person_in_charge_name'] ?? '')),
             'person_in_charge_contact' => trim((string) ($_POST['person_in_charge_contact'] ?? '')),
+            'client_update_token' => trim((string) ($_POST['client_update_token'] ?? '')),
             'status' => trim((string) ($_POST['status'] ?? 'Queued')),
             'priority_level' => trim((string) ($_POST['priority_level'] ?? 'Medium')),
             'billed_amount' => '0.00',
@@ -184,7 +188,9 @@ if ($editJobId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             'attending_technicians' => coolopz_parse_summary_names($editingJob['attending_technicians'] ?? ''),
             'site_address' => $editingJob['site_address'] ?? '',
             'google_maps_url' => $editingJob['google_maps_url'] ?? '',
+            'person_in_charge_name' => $editingJob['person_in_charge_name'] ?? '',
             'person_in_charge_contact' => $editingJob['person_in_charge_contact'] ?? '',
+            'client_update_token' => $editingJob['client_update_token'] ?? '',
             'status' => $editingJob['status'],
             'priority_level' => $editingJob['priority_level'],
             'billed_amount' => '0.00',
@@ -280,11 +286,12 @@ include __DIR__ . '/includes/sidebar.php';
                                 </thead>
                                 <tbody>
 <?php foreach ($jobs as $job): ?>
+<?php $clientUpdateUrl = coolopz_job_client_update_url((string) $job['client_update_token']); ?>
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
                                             <strong class="d-block"><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Add later', ENT_QUOTES, 'UTF-8') ?></strong>
-                                            <span class="subtle-note"><?= htmlspecialchars(($job['person_in_charge_contact'] ?? '') !== '' ? $job['person_in_charge_contact'] : 'PIC pending', ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="subtle-note"><?= htmlspecialchars(($job['person_in_charge_name'] ?? '') !== '' ? $job['person_in_charge_name'] : 'PIC pending', ENT_QUOTES, 'UTF-8') ?><?= ($job['person_in_charge_contact'] ?? '') !== '' ? ' | ' . htmlspecialchars($job['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') : '' ?></span>
                                         </td>
                                         <td>
                                             <strong class="d-block"><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></strong>
@@ -307,6 +314,8 @@ include __DIR__ . '/includes/sidebar.php';
                                         <td>
                                             <div class="jobs-actions">
                                                 <a class="btn btn-portal-secondary btn-sm" href="jobs.php?edit=<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
+                                                <a class="btn btn-outline-primary btn-sm" href="<?= htmlspecialchars($clientUpdateUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Client Form</a>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" data-copy-client-link="<?= htmlspecialchars($clientUpdateUrl, ENT_QUOTES, 'UTF-8') ?>">Copy Link</button>
                                                 <form method="post" class="m-0" onsubmit="return confirm('Delete this job?');">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="job_id" value="<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">
@@ -449,8 +458,25 @@ include __DIR__ . '/includes/sidebar.php';
                                     <input class="form-control" id="google_maps_url" name="google_maps_url" type="url" value="<?= htmlspecialchars($jobForm['google_maps_url'], ENT_QUOTES, 'UTF-8') ?>" placeholder="https://maps.google.com/...">
                                 </div>
                                 <div class="col-md-6">
+                                    <label class="form-label" for="person_in_charge_name">Person In Charge Name</label>
+                                    <input class="form-control" id="person_in_charge_name" name="person_in_charge_name" type="text" value="<?= htmlspecialchars($jobForm['person_in_charge_name'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label" for="person_in_charge_contact">Person In Charge Contact</label>
                                     <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="text" value="<?= htmlspecialchars($jobForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="client_update_link">Client Update Link</label>
+<?php if ($jobForm['client_update_token'] !== ''): ?>
+                                    <div class="input-group">
+                                        <input class="form-control" id="client_update_link" type="text" value="<?= htmlspecialchars(coolopz_job_client_update_url($jobForm['client_update_token']), ENT_QUOTES, 'UTF-8') ?>" readonly>
+                                        <button type="button" class="btn btn-portal-secondary" data-copy-target="client_update_link">Copy</button>
+                                    </div>
+                                    <div class="form-text">Send this unique link to the client so they can fill in the site details directly.</div>
+<?php else: ?>
+                                    <div class="form-text">The unique client link will be generated automatically after you create the job.</div>
+<?php endif; ?>
+                                    <input type="hidden" name="client_update_token" value="<?= htmlspecialchars($jobForm['client_update_token'], ENT_QUOTES, 'UTF-8') ?>">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="billed_amount">Billed Amount</label>
@@ -637,6 +663,31 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     updateBilledAmount();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-copy-client-link]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var link = button.getAttribute('data-copy-client-link') || '';
+            if (link === '' || !navigator.clipboard) {
+                return;
+            }
+
+            navigator.clipboard.writeText(link);
+        });
+    });
+
+    document.querySelectorAll('[data-copy-target]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var targetId = button.getAttribute('data-copy-target') || '';
+            var input = document.getElementById(targetId);
+            if (!(input instanceof HTMLInputElement) || !navigator.clipboard) {
+                return;
+            }
+
+            navigator.clipboard.writeText(input.value);
+        });
+    });
 });
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

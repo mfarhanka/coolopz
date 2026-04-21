@@ -1,6 +1,22 @@
 <?php
 declare(strict_types=1);
 
+function coolopz_generate_secure_token(int $bytes = 16): string
+{
+    return bin2hex(random_bytes($bytes));
+}
+
+function coolopz_issue_job_client_update_token(PDO $pdo): string
+{
+    do {
+        $token = coolopz_generate_secure_token();
+        $statement = $pdo->prepare('SELECT 1 FROM jobs WHERE client_update_token = :token LIMIT 1');
+        $statement->execute(['token' => $token]);
+    } while ($statement->fetch() !== false);
+
+    return $token;
+}
+
 function coolopz_default_services(): array
 {
     return [
@@ -179,7 +195,9 @@ function coolopz_ensure_job_columns(PDO $pdo): void
         'attending_technicians' => "ALTER TABLE jobs ADD COLUMN attending_technicians VARCHAR(255) NOT NULL DEFAULT '' AFTER technician_team",
         'site_address' => "ALTER TABLE jobs ADD COLUMN site_address VARCHAR(255) NOT NULL DEFAULT '' AFTER attending_technicians",
         'google_maps_url' => "ALTER TABLE jobs ADD COLUMN google_maps_url VARCHAR(255) NOT NULL DEFAULT '' AFTER site_address",
-        'person_in_charge_contact' => "ALTER TABLE jobs ADD COLUMN person_in_charge_contact VARCHAR(190) NOT NULL DEFAULT '' AFTER google_maps_url",
+        'person_in_charge_name' => "ALTER TABLE jobs ADD COLUMN person_in_charge_name VARCHAR(120) NOT NULL DEFAULT '' AFTER google_maps_url",
+        'person_in_charge_contact' => "ALTER TABLE jobs ADD COLUMN person_in_charge_contact VARCHAR(190) NOT NULL DEFAULT '' AFTER person_in_charge_name",
+        'client_update_token' => "ALTER TABLE jobs ADD COLUMN client_update_token VARCHAR(64) NOT NULL DEFAULT '' AFTER person_in_charge_contact",
     ];
 
     foreach ($requiredColumns as $columnName => $alterSql) {
@@ -199,6 +217,33 @@ function coolopz_ensure_job_columns(PDO $pdo): void
         if ($statement->fetch() === false) {
             $pdo->exec($alterSql);
         }
+    }
+
+    $jobsWithoutTokens = $pdo->query("SELECT id FROM jobs WHERE TRIM(client_update_token) = ''")->fetchAll(PDO::FETCH_COLUMN);
+    $updateTokenStatement = $pdo->prepare('UPDATE jobs SET client_update_token = :token WHERE id = :id');
+
+    foreach ($jobsWithoutTokens as $jobId) {
+        $updateTokenStatement->execute([
+            'id' => (int) $jobId,
+            'token' => coolopz_issue_job_client_update_token($pdo),
+        ]);
+    }
+
+    $indexStatement = $pdo->prepare(
+        'SELECT 1
+         FROM information_schema.STATISTICS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = :table_name
+           AND INDEX_NAME = :index_name
+         LIMIT 1'
+    );
+    $indexStatement->execute([
+        'table_name' => 'jobs',
+        'index_name' => 'uniq_jobs_client_update_token',
+    ]);
+
+    if ($indexStatement->fetch() === false) {
+        $pdo->exec('ALTER TABLE jobs ADD UNIQUE KEY uniq_jobs_client_update_token (client_update_token)');
     }
 }
 
