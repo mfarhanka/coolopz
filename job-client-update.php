@@ -6,6 +6,8 @@ $token = trim((string) ($_REQUEST['token'] ?? ''));
 $errorMessage = '';
 $successMessage = '';
 $job = null;
+$serviceLines = [];
+$serviceTotal = 0.0;
 $clientForm = [
     'site_address' => '',
     'google_maps_url' => '',
@@ -21,6 +23,20 @@ if ($token === '') {
     if ($job === null) {
         $errorMessage = 'This update link is no longer valid.';
     } else {
+        $serviceLines = coolopz_fetch_job_service_lines((int) $job['id']);
+        $serviceTotal = $serviceLines !== []
+            ? coolopz_calculate_billed_amount($serviceLines)
+            : (float) ($job['billed_amount'] ?? 0);
+
+        if ($serviceLines === [] && trim((string) ($job['service_type'] ?? '')) !== '') {
+            foreach (coolopz_normalize_service_names(explode(',', (string) $job['service_type'])) as $serviceName) {
+                $serviceLines[] = [
+                    'service_name' => $serviceName,
+                    'line_price' => null,
+                ];
+            }
+        }
+
         $clientForm = [
             'site_address' => (string) ($job['site_address'] ?? ''),
             'google_maps_url' => (string) ($job['google_maps_url'] ?? ''),
@@ -87,6 +103,41 @@ if ($token === '') {
                     <strong class="d-block">Customer</strong>
                     <span><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Not assigned yet', ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
+            </div>
+
+            <div class="simple-panel mb-3">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-2">
+                    <div>
+                        <strong class="d-block">Services</strong>
+                        <span class="subtle-note">Review the services included for this job.</span>
+                    </div>
+                    <div class="text-end">
+                        <strong class="d-block">Total Cost</strong>
+                        <span><?= htmlspecialchars('RM' . number_format($serviceTotal, 2), ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                </div>
+<?php if ($serviceLines !== []): ?>
+                <div class="table-responsive">
+                    <table class="table portal-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th class="text-end">Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+<?php foreach ($serviceLines as $serviceLine): ?>
+                            <tr>
+                                <td><?= htmlspecialchars((string) $serviceLine['service_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="text-end"><?= htmlspecialchars($serviceLine['line_price'] === null ? '-' : 'RM' . number_format((float) $serviceLine['line_price'], 2), ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+<?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+<?php else: ?>
+                <p class="subtle-note mb-0">No services have been added to this job yet.</p>
+<?php endif; ?>
             </div>
 
             <form method="post" class="row g-3">

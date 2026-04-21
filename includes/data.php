@@ -438,6 +438,7 @@ function coolopz_find_job_by_client_token(string $token): ?array
                 ticket_number,
                 customer_name,
                 service_type,
+                billed_amount,
                 site_address,
                 google_maps_url,
                 person_in_charge_name,
