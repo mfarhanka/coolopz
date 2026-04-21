@@ -62,7 +62,9 @@ if ($token === '') {
                 'person_in_charge_contact' => coolopz_normalize_phone_number($rawPersonInChargeContact),
             ];
 
-            if ($clientForm['google_maps_url'] !== '' && filter_var($clientForm['google_maps_url'], FILTER_VALIDATE_URL) === false) {
+            if ($clientForm['site_address'] === '' && $clientForm['google_maps_url'] === '') {
+                $errorMessage = 'Please provide either the site address or a Google Maps link.';
+            } elseif ($clientForm['google_maps_url'] !== '' && filter_var($clientForm['google_maps_url'], FILTER_VALIDATE_URL) === false) {
                 $errorMessage = 'Please enter a valid Google Maps link.';
             } elseif (!coolopz_is_valid_phone_number($rawPersonInChargeContact)) {
                 $errorMessage = 'Please enter a valid phone number for the Person In Charge contact.';
@@ -157,10 +159,12 @@ if ($token === '') {
                 <div class="col-12">
                     <label class="form-label" for="site_address">Site Address</label>
                     <textarea class="form-control notes-field" id="site_address" name="site_address" rows="3" placeholder="Enter the full service address"><?= htmlspecialchars($clientForm['site_address'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <div class="form-text">Add the site address here, or share a Google Maps link below.</div>
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="google_maps_url">Google Maps Link</label>
                     <input class="form-control" id="google_maps_url" name="google_maps_url" type="url" value="<?= htmlspecialchars($clientForm['google_maps_url'], ENT_QUOTES, 'UTF-8') ?>" placeholder="https://maps.google.com/...">
+                    <div class="form-text">Optional if the site address is already filled in.</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="person_in_charge_name">Person In Charge Name</label>
