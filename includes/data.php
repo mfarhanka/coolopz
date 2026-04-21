@@ -316,10 +316,21 @@ function coolopz_fetch_staff_metrics(): array
 function coolopz_fetch_staff_users(): array
 {
     $statement = coolopz_db()->query(
-        'SELECT full_name, email, role_name, created_at FROM users ORDER BY created_at DESC, id DESC'
+        'SELECT id, full_name, email, role_name, created_at FROM users ORDER BY created_at DESC, id DESC'
     );
 
     return $statement->fetchAll();
+}
+
+function coolopz_find_staff_user(int $userId): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id, full_name, email, role_name, created_at FROM users WHERE id = :id LIMIT 1'
+    );
+    $statement->execute(['id' => $userId]);
+    $user = $statement->fetch();
+
+    return $user === false ? null : $user;
 }
 
 function coolopz_create_staff_user(string $fullName, string $email, string $roleName, string $password): void
@@ -334,4 +345,22 @@ function coolopz_create_staff_user(string $fullName, string $email, string $role
         'role_name' => $roleName,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
     ]);
+}
+
+function coolopz_reset_staff_password(int $userId, string $password): void
+{
+    $statement = coolopz_db()->prepare(
+        'UPDATE users SET password_hash = :password_hash WHERE id = :id'
+    );
+
+    $statement->execute([
+        'id' => $userId,
+        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+    ]);
+}
+
+function coolopz_delete_staff_user(int $userId): void
+{
+    $statement = coolopz_db()->prepare('DELETE FROM users WHERE id = :id');
+    $statement->execute(['id' => $userId]);
 }

@@ -12,38 +12,85 @@ $currentUserRole = $currentUser['role'] ?? 'Operations Admin';
 $userInitials = coolopz_user_initials($currentUserName);
 
 $errorMessage = '';
-$successMessage = '';
+$messageKey = (string) ($_GET['message'] ?? '');
+$successMessage = match ($messageKey) {
+    'created' => 'Staff account created successfully.',
+    'password-reset' => 'Password reset successfully.',
+    'deleted' => 'Staff account removed successfully.',
+    default => '',
+};
 $formData = [
     'full_name' => '',
     'email' => '',
     'role_name' => 'Service Coordinator',
 ];
+$resetTargetId = isset($_GET['reset']) ? (int) $_GET['reset'] : 0;
+$resetPasswordForm = [
+    'user_id' => $resetTargetId,
+    'password' => '',
+    'confirm_password' => '',
+];
+$resetPasswordUser = $resetTargetId > 0 ? coolopz_find_staff_user($resetTargetId) : null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formData['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
-    $formData['email'] = trim((string) ($_POST['email'] ?? ''));
-    $formData['role_name'] = trim((string) ($_POST['role_name'] ?? 'Service Coordinator'));
-    $password = (string) ($_POST['password'] ?? '');
+    $action = (string) ($_POST['action'] ?? 'create');
 
-    if ($formData['full_name'] === '' || $formData['email'] === '' || $password === '') {
-        $errorMessage = 'Name, email, and password are required.';
-    } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
-        $errorMessage = 'Enter a valid email address.';
-    } elseif (strlen($password) < 8) {
-        $errorMessage = 'Password must be at least 8 characters.';
+    if ($action === 'delete') {
+        $deleteUserId = (int) ($_POST['user_id'] ?? 0);
+        $deleteUser = $deleteUserId > 0 ? coolopz_find_staff_user($deleteUserId) : null;
+
+        if ($deleteUser === null) {
+            $errorMessage = 'The selected staff account could not be found.';
+        } elseif (($deleteUser['email'] ?? '') === ($currentUser['email'] ?? '')) {
+            $errorMessage = 'You cannot remove the account you are currently using.';
+        } else {
+            coolopz_delete_staff_user($deleteUserId);
+            header('Location: staff.php?message=deleted');
+            exit;
+        }
+    } elseif ($action === 'reset_password') {
+        $resetPasswordForm = [
+            'user_id' => (int) ($_POST['user_id'] ?? 0),
+            'password' => (string) ($_POST['password'] ?? ''),
+            'confirm_password' => (string) ($_POST['confirm_password'] ?? ''),
+        ];
+        $resetPasswordUser = $resetPasswordForm['user_id'] > 0 ? coolopz_find_staff_user($resetPasswordForm['user_id']) : null;
+
+        if ($resetPasswordUser === null) {
+            $errorMessage = 'The selected staff account could not be found.';
+        } elseif ($resetPasswordForm['password'] === '' || $resetPasswordForm['confirm_password'] === '') {
+            $errorMessage = 'Enter and confirm the new password.';
+        } elseif (strlen($resetPasswordForm['password']) < 8) {
+            $errorMessage = 'Password must be at least 8 characters.';
+        } elseif ($resetPasswordForm['password'] !== $resetPasswordForm['confirm_password']) {
+            $errorMessage = 'The password confirmation does not match.';
+        } else {
+            coolopz_reset_staff_password($resetPasswordForm['user_id'], $resetPasswordForm['password']);
+            header('Location: staff.php?message=password-reset');
+            exit;
+        }
     } else {
-        try {
-            coolopz_create_staff_user($formData['full_name'], $formData['email'], $formData['role_name'], $password);
-            $successMessage = 'Staff account created successfully.';
-            $formData = [
-                'full_name' => '',
-                'email' => '',
-                'role_name' => 'Service Coordinator',
-            ];
-        } catch (PDOException $exception) {
-            $errorMessage = str_contains($exception->getMessage(), 'Duplicate')
-                ? 'That email address already exists.'
-                : 'Unable to create the staff account right now.';
+        $formData['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
+        $formData['email'] = trim((string) ($_POST['email'] ?? ''));
+        $formData['role_name'] = trim((string) ($_POST['role_name'] ?? 'Service Coordinator'));
+        $password = (string) ($_POST['password'] ?? '');
+
+        if ($formData['full_name'] === '' || $formData['email'] === '' || $password === '') {
+            $errorMessage = 'Name, email, and password are required.';
+        } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
+            $errorMessage = 'Enter a valid email address.';
+        } elseif (strlen($password) < 8) {
+            $errorMessage = 'Password must be at least 8 characters.';
+        } else {
+            try {
+                coolopz_create_staff_user($formData['full_name'], $formData['email'], $formData['role_name'], $password);
+                header('Location: staff.php?message=created');
+                exit;
+            } catch (PDOException $exception) {
+                $errorMessage = str_contains($exception->getMessage(), 'Duplicate')
+                    ? 'That email address already exists.'
+                    : 'Unable to create the staff account right now.';
+            }
         }
     }
 }
@@ -145,20 +192,66 @@ include __DIR__ . '/includes/sidebar.php';
                                         <th>Email</th>
                                         <th>Role</th>
                                         <th>Created</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
 <?php foreach ($staffUsers as $user): ?>
+<?php $isCurrentUser = ($user['email'] ?? '') === ($currentUser['email'] ?? ''); ?>
                                     <tr>
                                         <td><?= htmlspecialchars($user['full_name'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars($user['email'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><span class="status-badge <?= coolopz_status_badge_class($user['role_name'] === 'Operations Admin' ? 'Priority' : 'In Progress') ?>"><?= htmlspecialchars($user['role_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                         <td><?= htmlspecialchars(date('d M Y', strtotime($user['created_at'])), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <div class="staff-actions">
+                                                <a class="btn btn-portal-secondary btn-sm" href="staff.php?reset=<?= htmlspecialchars((string) $user['id'], ENT_QUOTES, 'UTF-8') ?>">Reset Password</a>
+<?php if ($isCurrentUser): ?>
+                                                <span class="subtle-note">Current account</span>
+<?php else: ?>
+                                                <form method="post" class="m-0" onsubmit="return confirm('Remove this staff account?');">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="user_id" value="<?= htmlspecialchars((string) $user['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Remove</button>
+                                                </form>
+<?php endif; ?>
+                                            </div>
+                                        </td>
                                     </tr>
 <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
+
+<?php if ($resetPasswordUser !== null): ?>
+                        <div class="staff-reset-panel mt-3">
+                            <div>
+                                <span class="section-label">Password</span>
+                                <h3 class="panel-title">Reset Password for <?= htmlspecialchars($resetPasswordUser['full_name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                                <p class="hero-copy mb-0">Set a new password for <?= htmlspecialchars($resetPasswordUser['email'], ENT_QUOTES, 'UTF-8') ?>.</p>
+                            </div>
+
+                            <form method="post" class="row g-2 mt-0">
+                                <input type="hidden" name="action" value="reset_password">
+                                <input type="hidden" name="user_id" value="<?= htmlspecialchars((string) $resetPasswordUser['id'], ENT_QUOTES, 'UTF-8') ?>">
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="reset_password">New Password</label>
+                                    <input class="form-control" id="reset_password" name="password" type="password" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="confirm_password">Confirm Password</label>
+                                    <input class="form-control" id="confirm_password" name="confirm_password" type="password" required>
+                                </div>
+                                <div class="col-12 d-flex gap-2 justify-content-end">
+                                    <a class="btn btn-portal-secondary" href="staff.php">Cancel</a>
+                                    <button type="submit" class="btn btn-portal-primary">Save New Password</button>
+                                </div>
+                            </form>
+                        </div>
+<?php elseif ($resetTargetId > 0): ?>
+                        <div class="login-alert mt-3" role="alert">The selected staff account could not be found.</div>
+<?php endif; ?>
                     </div>
                 </div>
             </section>

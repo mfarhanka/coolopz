@@ -375,6 +375,19 @@ body {
     border-color: var(--portal-border);
 }
 
+.staff-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.staff-reset-panel {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--portal-border);
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;
