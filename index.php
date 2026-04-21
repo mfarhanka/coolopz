@@ -72,7 +72,7 @@ include __DIR__ . '/includes/sidebar.php';
 <?php foreach ($priorityJobs as $job): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($job['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Add later', ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><span class="status-badge <?= coolopz_status_badge_class($job['status']) ?>"><?= htmlspecialchars($job['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                     </tr>

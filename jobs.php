@@ -22,6 +22,7 @@ $statuses = coolopz_job_statuses();
 $priorities = coolopz_job_priorities();
 $customerOptions = coolopz_fetch_customer_options();
 $staffTechnicians = coolopz_fetch_assignable_staff();
+$staffTechnicianNames = array_map(static fn (array $staffUser): string => $staffUser['full_name'], $staffTechnicians);
 
 $errorMessage = '';
 $messageKey = (string) ($_GET['message'] ?? '');
@@ -42,7 +43,11 @@ $jobForm = [
         'line_price' => $servicePriceMap[$defaultServiceType] ?? 0,
     ]] : [],
     'technician_team' => '',
+    'attending_technicians' => [],
     'zone' => '',
+    'site_address' => '',
+    'google_maps_url' => '',
+    'person_in_charge_contact' => '',
     'status' => 'Queued',
     'priority_level' => 'Medium',
     'billed_amount' => $defaultServiceType !== '' ? number_format(coolopz_calculate_billed_amount([[
@@ -79,7 +84,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (array) ($_POST['service_prices'] ?? [])
             ),
             'technician_team' => trim((string) ($_POST['technician_team'] ?? '')),
+            'attending_technicians' => coolopz_normalize_technician_names((array) ($_POST['attending_technicians'] ?? [])),
             'zone' => trim((string) ($_POST['zone'] ?? '')),
+            'site_address' => trim((string) ($_POST['site_address'] ?? '')),
+            'google_maps_url' => trim((string) ($_POST['google_maps_url'] ?? '')),
+            'person_in_charge_contact' => trim((string) ($_POST['person_in_charge_contact'] ?? '')),
             'status' => trim((string) ($_POST['status'] ?? 'Queued')),
             'priority_level' => trim((string) ($_POST['priority_level'] ?? 'Medium')),
             'billed_amount' => '0.00',
@@ -102,12 +111,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'update' && $existingJob !== null && $existingJob['technician_team'] !== '') {
             $allowedTechnicians[] = $existingJob['technician_team'];
         }
+        if ($action === 'update' && $existingJob !== null && ($existingJob['attending_technicians'] ?? '') !== '') {
+            $allowedTechnicians = array_merge($allowedTechnicians, coolopz_parse_summary_names($existingJob['attending_technicians']));
+        }
         $allowedTechnicians = array_values(array_unique($allowedTechnicians));
 
-        if ($jobForm['technician_team'] === '') {
-            $errorMessage = 'Technician is required.';
-            $shouldOpenJobModal = true;
-        } elseif ($serviceTypes === []) {
+        if ($serviceTypes === []) {
             $errorMessage = 'Add at least one service before creating a job.';
             $shouldOpenJobModal = true;
         } elseif ($jobForm['service_lines'] === []) {
@@ -119,14 +128,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (array_diff(array_column($jobForm['service_lines'], 'service_name'), $serviceTypes) !== []) {
             $errorMessage = 'Select valid service types from the service list.';
             $shouldOpenJobModal = true;
-        } elseif (!in_array($jobForm['technician_team'], $allowedTechnicians, true)) {
-            $errorMessage = 'Select a technician from the staff list.';
+        } elseif ($jobForm['technician_team'] !== '' && !in_array($jobForm['technician_team'], $allowedTechnicians, true)) {
+            $errorMessage = 'Select a lead technician from the staff list.';
+            $shouldOpenJobModal = true;
+        } elseif (array_diff($jobForm['attending_technicians'], $allowedTechnicians) !== []) {
+            $errorMessage = 'Select valid attending technicians from the staff list.';
             $shouldOpenJobModal = true;
         } elseif (!in_array($jobForm['status'], $statuses, true)) {
             $errorMessage = 'Select a valid job status.';
             $shouldOpenJobModal = true;
         } elseif (!in_array($jobForm['priority_level'], $priorities, true)) {
             $errorMessage = 'Select a valid priority level.';
+            $shouldOpenJobModal = true;
+        } elseif ($jobForm['google_maps_url'] !== '' && filter_var($jobForm['google_maps_url'], FILTER_VALIDATE_URL) === false) {
+            $errorMessage = 'Enter a valid Google Maps link.';
             $shouldOpenJobModal = true;
         } elseif ($action === 'update' && ($editJobId < 1 || $existingJob === null)) {
             $errorMessage = 'The job you are trying to update no longer exists.';
@@ -168,7 +183,11 @@ if ($editJobId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
             'customer_name' => $editingJob['customer_name'],
             'service_lines' => coolopz_fetch_job_service_lines((int) $editingJob['id']),
             'technician_team' => $editingJob['technician_team'],
+            'attending_technicians' => coolopz_parse_summary_names($editingJob['attending_technicians'] ?? ''),
             'zone' => $editingJob['zone'],
+            'site_address' => $editingJob['site_address'] ?? '',
+            'google_maps_url' => $editingJob['google_maps_url'] ?? '',
+            'person_in_charge_contact' => $editingJob['person_in_charge_contact'] ?? '',
             'status' => $editingJob['status'],
             'priority_level' => $editingJob['priority_level'],
             'billed_amount' => '0.00',
@@ -266,12 +285,24 @@ include __DIR__ . '/includes/sidebar.php';
 <?php foreach ($jobs as $job): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Add later', ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <strong class="d-block"><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Add later', ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <span class="subtle-note"><?= htmlspecialchars(($job['person_in_charge_contact'] ?? '') !== '' ? $job['person_in_charge_contact'] : 'PIC pending', ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
                                         <td>
                                             <strong class="d-block"><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></strong>
-                                            <span class="subtle-note"><?= htmlspecialchars($job['zone'] !== '' ? $job['zone'] : 'No zone assigned', ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="subtle-note d-block"><?= htmlspecialchars($job['zone'] !== '' ? $job['zone'] : 'No zone assigned', ENT_QUOTES, 'UTF-8') ?></span>
+<?php if (($job['site_address'] ?? '') !== ''): ?>
+                                            <span class="subtle-note d-block"><?= htmlspecialchars($job['site_address'], ENT_QUOTES, 'UTF-8') ?></span>
+<?php endif; ?>
+<?php if (($job['google_maps_url'] ?? '') !== ''): ?>
+                                            <a class="subtle-note" href="<?= htmlspecialchars($job['google_maps_url'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Open map</a>
+<?php endif; ?>
                                         </td>
-                                        <td><?= htmlspecialchars($job['technician_team'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <strong class="d-block"><?= htmlspecialchars($job['technician_team'] !== '' ? $job['technician_team'] : 'Add later', ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <span class="subtle-note"><?= htmlspecialchars(($job['attending_technicians'] ?? '') !== '' ? $job['attending_technicians'] : 'No attending team yet', ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
                                         <td><span class="status-badge <?= coolopz_status_badge_class($job['status']) ?>"><?= htmlspecialchars($job['status'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                         <td><?= htmlspecialchars($job['priority_level'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars((float) $job['billed_amount'] > 0 ? 'RM' . number_format((float) $job['billed_amount'], 2) : 'Pending', ENT_QUOTES, 'UTF-8') ?></td>
@@ -387,20 +418,45 @@ include __DIR__ . '/includes/sidebar.php';
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="technician_team">Technician</label>
-                                    <select class="form-select" id="technician_team" name="technician_team" required>
-                                        <option value="">Select technician</option>
+                                    <label class="form-label" for="technician_team">Lead Technician</label>
+                                    <select class="form-select" id="technician_team" name="technician_team">
+                                        <option value="">Add technician later</option>
 <?php foreach ($staffTechnicians as $staffUser): ?>
                                         <option value="<?= htmlspecialchars($staffUser['full_name'], ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['technician_team'] === $staffUser['full_name'] ? ' selected' : '' ?>><?= htmlspecialchars($staffUser['full_name'] . ' (' . $staffUser['role_name'] . ')', ENT_QUOTES, 'UTF-8') ?></option>
 <?php endforeach; ?>
-<?php if ($jobForm['technician_team'] !== '' && !in_array($jobForm['technician_team'], array_map(static fn (array $staffUser): string => $staffUser['full_name'], $staffTechnicians), true)): ?>
+<?php if ($jobForm['technician_team'] !== '' && !in_array($jobForm['technician_team'], $staffTechnicianNames, true)): ?>
                                         <option value="<?= htmlspecialchars($jobForm['technician_team'], ENT_QUOTES, 'UTF-8') ?>" selected><?= htmlspecialchars($jobForm['technician_team'] . ' (existing assignment)', ENT_QUOTES, 'UTF-8') ?></option>
 <?php endif; ?>
                                     </select>
+                                    <div class="form-text">You can assign the lead technician later.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="attending_technicians">Technicians Attending</label>
+                                    <select class="form-select" id="attending_technicians" name="attending_technicians[]" multiple size="5">
+<?php foreach ($staffTechnicians as $staffUser): ?>
+                                        <option value="<?= htmlspecialchars($staffUser['full_name'], ENT_QUOTES, 'UTF-8') ?>"<?= in_array($staffUser['full_name'], $jobForm['attending_technicians'], true) ? ' selected' : '' ?>><?= htmlspecialchars($staffUser['full_name'] . ' (' . $staffUser['role_name'] . ')', ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+<?php foreach (array_diff($jobForm['attending_technicians'], $staffTechnicianNames) as $existingTechnician): ?>
+                                        <option value="<?= htmlspecialchars($existingTechnician, ENT_QUOTES, 'UTF-8') ?>" selected><?= htmlspecialchars($existingTechnician . ' (existing assignment)', ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                    </select>
+                                    <div class="form-text">Select one or more technicians who will attend this job.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="zone">Zone</label>
                                     <input class="form-control" id="zone" name="zone" type="text" value="<?= htmlspecialchars($jobForm['zone'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="site_address">Site Address</label>
+                                    <input class="form-control" id="site_address" name="site_address" type="text" value="<?= htmlspecialchars($jobForm['site_address'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="google_maps_url">Google Maps Link</label>
+                                    <input class="form-control" id="google_maps_url" name="google_maps_url" type="url" value="<?= htmlspecialchars($jobForm['google_maps_url'], ENT_QUOTES, 'UTF-8') ?>" placeholder="https://maps.google.com/...">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="person_in_charge_contact">Person In Charge Contact</label>
+                                    <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="text" value="<?= htmlspecialchars($jobForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="billed_amount">Billed Amount</label>

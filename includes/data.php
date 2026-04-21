@@ -22,6 +22,34 @@ function coolopz_service_names_summary(array $serviceNames): string
     return implode(', ', coolopz_normalize_service_names($serviceNames));
 }
 
+function coolopz_normalize_technician_names(array $technicianNames): array
+{
+    $normalized = [];
+
+    foreach ($technicianNames as $technicianName) {
+        $value = trim((string) $technicianName);
+        if ($value !== '') {
+            $normalized[] = $value;
+        }
+    }
+
+    return array_values(array_unique($normalized));
+}
+
+function coolopz_technician_names_summary(array $technicianNames): string
+{
+    return implode(', ', coolopz_normalize_technician_names($technicianNames));
+}
+
+function coolopz_parse_summary_names(?string $summary): array
+{
+    if ($summary === null || trim($summary) === '') {
+        return [];
+    }
+
+    return coolopz_normalize_technician_names(explode(',', $summary));
+}
+
 function coolopz_normalize_service_lines(array $serviceNames, array $servicePrices): array
 {
     $linesByName = [];
@@ -114,7 +142,7 @@ function coolopz_fetch_dashboard_metrics(): array
 
     return [
         'active_jobs' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status IN ('Urgent', 'In Progress', 'Queued')")->fetchColumn(),
-        'available_technicians' => (int) $pdo->query("SELECT COUNT(DISTINCT technician_team) FROM jobs WHERE status IN ('Urgent', 'In Progress', 'Queued')")->fetchColumn(),
+        'available_technicians' => (int) $pdo->query("SELECT COUNT(DISTINCT technician_team) FROM jobs WHERE status IN ('Urgent', 'In Progress', 'Queued') AND TRIM(technician_team) <> ''")->fetchColumn(),
         'completed_today' => (int) $pdo->query("SELECT COUNT(*) FROM jobs WHERE status = 'Completed'")->fetchColumn(),
     ];
 }
@@ -127,7 +155,9 @@ function coolopz_fetch_priority_jobs(int $limit = 4): array
                 jobs.customer_name,
                 COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
                 jobs.technician_team,
+            jobs.attending_technicians,
                 jobs.zone,
+            jobs.site_address,
                 jobs.status,
                 jobs.priority_level
          FROM jobs
@@ -202,7 +232,11 @@ function coolopz_fetch_jobs(): array
                 jobs.customer_name,
                 COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
                 jobs.technician_team,
+            jobs.attending_technicians,
                 jobs.zone,
+            jobs.site_address,
+            jobs.google_maps_url,
+            jobs.person_in_charge_contact,
                 jobs.status,
                 jobs.priority_level,
                 jobs.billed_amount,
@@ -225,7 +259,11 @@ function coolopz_find_job(int $jobId): ?array
                 jobs.customer_name,
                 COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
                 jobs.technician_team,
+            jobs.attending_technicians,
                 jobs.zone,
+            jobs.site_address,
+            jobs.google_maps_url,
+            jobs.person_in_charge_contact,
                 jobs.status,
                 jobs.priority_level,
                 jobs.billed_amount,
@@ -246,8 +284,8 @@ function coolopz_create_job(array $jobData): void
 {
     $pdo = coolopz_db();
     $statement = $pdo->prepare(
-        'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes)
-         VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :zone, :status, :priority_level, :billed_amount, :notes)'
+        'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, attending_technicians, zone, site_address, google_maps_url, person_in_charge_contact, status, priority_level, billed_amount, notes)
+         VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :attending_technicians, :zone, :site_address, :google_maps_url, :person_in_charge_contact, :status, :priority_level, :billed_amount, :notes)'
     );
 
     $pdo->beginTransaction();
@@ -258,7 +296,11 @@ function coolopz_create_job(array $jobData): void
             'customer_name' => $jobData['customer_name'],
             'service_type' => coolopz_service_names_summary(array_column($jobData['service_lines'], 'service_name')),
             'technician_team' => $jobData['technician_team'],
+            'attending_technicians' => coolopz_technician_names_summary($jobData['attending_technicians']),
             'zone' => $jobData['zone'],
+            'site_address' => $jobData['site_address'],
+            'google_maps_url' => $jobData['google_maps_url'],
+            'person_in_charge_contact' => $jobData['person_in_charge_contact'],
             'status' => $jobData['status'],
             'priority_level' => $jobData['priority_level'],
             'billed_amount' => $jobData['billed_amount'],
@@ -282,7 +324,11 @@ function coolopz_update_job(int $jobId, array $jobData): void
              customer_name = :customer_name,
              service_type = :service_type,
              technician_team = :technician_team,
+             attending_technicians = :attending_technicians,
              zone = :zone,
+             site_address = :site_address,
+             google_maps_url = :google_maps_url,
+             person_in_charge_contact = :person_in_charge_contact,
              status = :status,
              priority_level = :priority_level,
              billed_amount = :billed_amount,
@@ -299,7 +345,11 @@ function coolopz_update_job(int $jobId, array $jobData): void
             'customer_name' => $jobData['customer_name'],
             'service_type' => coolopz_service_names_summary(array_column($jobData['service_lines'], 'service_name')),
             'technician_team' => $jobData['technician_team'],
+            'attending_technicians' => coolopz_technician_names_summary($jobData['attending_technicians']),
             'zone' => $jobData['zone'],
+            'site_address' => $jobData['site_address'],
+            'google_maps_url' => $jobData['google_maps_url'],
+            'person_in_charge_contact' => $jobData['person_in_charge_contact'],
             'status' => $jobData['status'],
             'priority_level' => $jobData['priority_level'],
             'billed_amount' => $jobData['billed_amount'],

@@ -165,6 +165,43 @@ function coolopz_ensure_job_services_table(PDO $pdo): void
     }
 }
 
+function coolopz_ensure_job_columns(PDO $pdo): void
+{
+    static $jobColumnsEnsured = false;
+
+    if ($jobColumnsEnsured) {
+        return;
+    }
+
+    $jobColumnsEnsured = true;
+
+    $requiredColumns = [
+        'attending_technicians' => "ALTER TABLE jobs ADD COLUMN attending_technicians VARCHAR(255) NOT NULL DEFAULT '' AFTER technician_team",
+        'site_address' => "ALTER TABLE jobs ADD COLUMN site_address VARCHAR(255) NOT NULL DEFAULT '' AFTER zone",
+        'google_maps_url' => "ALTER TABLE jobs ADD COLUMN google_maps_url VARCHAR(255) NOT NULL DEFAULT '' AFTER site_address",
+        'person_in_charge_contact' => "ALTER TABLE jobs ADD COLUMN person_in_charge_contact VARCHAR(190) NOT NULL DEFAULT '' AFTER google_maps_url",
+    ];
+
+    foreach ($requiredColumns as $columnName => $alterSql) {
+        $statement = $pdo->prepare(
+            'SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = :table_name
+               AND COLUMN_NAME = :column_name
+             LIMIT 1'
+        );
+        $statement->execute([
+            'table_name' => 'jobs',
+            'column_name' => $columnName,
+        ]);
+
+        if ($statement->fetch() === false) {
+            $pdo->exec($alterSql);
+        }
+    }
+}
+
 function coolopz_db_config(): array
 {
     static $config;
@@ -201,6 +238,7 @@ function coolopz_db(): PDO
 
     coolopz_ensure_customer_contact_columns($pdo);
     coolopz_ensure_services_table($pdo);
+    coolopz_ensure_job_columns($pdo);
     coolopz_ensure_job_services_table($pdo);
 
     return $pdo;
