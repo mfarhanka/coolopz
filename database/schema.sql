@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(190) NOT NULL,
+    phone_number VARCHAR(30) NOT NULL,
+    email VARCHAR(190) DEFAULT NULL,
     customer_type VARCHAR(50) NOT NULL,
     notes VARCHAR(255) NOT NULL,
     renewal_status VARCHAR(50) NOT NULL,
@@ -42,15 +44,17 @@ ON DUPLICATE KEY UPDATE
     role_name = VALUES(role_name),
     password_hash = VALUES(password_hash);
 
-INSERT INTO customers (name, customer_type, notes, renewal_status, rating)
+INSERT INTO customers (name, phone_number, email, customer_type, notes, renewal_status, rating)
 VALUES
-    ('Meridian Office Park', 'Commercial', 'Quarterly preventive maintenance for 32 indoor units.', 'Contract Active', 4.9),
-    ('Bloom Pediatric Center', 'Commercial', 'High-priority service account with same-day response terms.', 'Priority', 4.8),
-    ('Casa Bayu Residence', 'Residential', 'Renewal proposal prepared for multi-unit maintenance package.', 'Renewal Due', 4.7),
-    ('Northpoint Suites', 'Residential', 'Send maintenance summary and invoice pack.', 'Contract Active', 4.6),
-    ('Pelita Food Hall', 'Commercial', 'Confirm next preventive maintenance slot for kitchen zone.', 'Contract Active', 4.8),
-    ('Harbor Dental Clinic', 'Commercial', 'Collect feedback after completed gas top-up service.', 'Renewal Due', 4.5)
+    ('Meridian Office Park', '+60 12-801 4401', 'ops@meridianofficepark.my', 'Commercial', 'Quarterly preventive maintenance for 32 indoor units.', 'Contract Active', 4.9),
+    ('Bloom Pediatric Center', '+60 17-455 9832', 'facilities@bloompediatric.my', 'Commercial', 'High-priority service account with same-day response terms.', 'Priority', 4.8),
+    ('Casa Bayu Residence', '+60 11-2618 4026', NULL, 'Residential', 'Renewal proposal prepared for multi-unit maintenance package.', 'Renewal Due', 4.7),
+    ('Northpoint Suites', '+60 16-632 7780', 'admin@northpointsuites.my', 'Residential', 'Send maintenance summary and invoice pack.', 'Contract Active', 4.6),
+    ('Pelita Food Hall', '+60 14-718 6405', NULL, 'Commercial', 'Confirm next preventive maintenance slot for kitchen zone.', 'Contract Active', 4.8),
+    ('Harbor Dental Clinic', '+60 19-304 1527', 'support@harbordental.my', 'Commercial', 'Collect feedback after completed gas top-up service.', 'Renewal Due', 4.5)
 ON DUPLICATE KEY UPDATE
+    phone_number = VALUES(phone_number),
+    email = VALUES(email),
     customer_type = VALUES(customer_type),
     notes = VALUES(notes),
     renewal_status = VALUES(renewal_status),

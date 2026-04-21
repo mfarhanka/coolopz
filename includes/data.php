@@ -176,27 +176,9 @@ function coolopz_fetch_customer_metrics(): array
     $pdo = coolopz_db();
 
     return [
-        'commercial' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE customer_type = 'Commercial'")->fetchColumn(),
-        'residential' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE customer_type = 'Residential'")->fetchColumn(),
-        'renewals_pending' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE renewal_status = 'Renewal Due'")->fetchColumn(),
         'total' => (int) $pdo->query('SELECT COUNT(*) FROM customers')->fetchColumn(),
-    ];
-}
-
-function coolopz_customer_types(): array
-{
-    return [
-        'Commercial',
-        'Residential',
-    ];
-}
-
-function coolopz_customer_renewal_statuses(): array
-{
-    return [
-        'Contract Active',
-        'Renewal Due',
-        'Priority',
+        'with_phone_number' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE TRIM(phone_number) <> ''")->fetchColumn(),
+        'with_email' => (int) $pdo->query("SELECT COUNT(*) FROM customers WHERE email IS NOT NULL AND TRIM(email) <> ''")->fetchColumn(),
     ];
 }
 
@@ -204,9 +186,9 @@ function coolopz_fetch_customers(): array
 {
     $pdo = coolopz_db();
     $statement = $pdo->query(
-        "SELECT id, name, customer_type, notes, renewal_status, rating, created_at
+        'SELECT id, name, phone_number, email, notes, created_at
          FROM customers
-         ORDER BY FIELD(renewal_status, 'Priority', 'Renewal Due', 'Contract Active'), id DESC"
+         ORDER BY id DESC'
     );
 
     return $statement->fetchAll();
@@ -215,7 +197,7 @@ function coolopz_fetch_customers(): array
 function coolopz_find_customer(int $customerId): ?array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT id, name, customer_type, notes, renewal_status, rating FROM customers WHERE id = :id LIMIT 1'
+        'SELECT id, name, phone_number, email, notes FROM customers WHERE id = :id LIMIT 1'
     );
     $statement->execute(['id' => $customerId]);
     $customer = $statement->fetch();
@@ -226,16 +208,15 @@ function coolopz_find_customer(int $customerId): ?array
 function coolopz_create_customer(array $customerData): void
 {
     $statement = coolopz_db()->prepare(
-        'INSERT INTO customers (name, customer_type, notes, renewal_status, rating)
-         VALUES (:name, :customer_type, :notes, :renewal_status, :rating)'
+        'INSERT INTO customers (name, phone_number, email, notes)
+         VALUES (:name, :phone_number, :email, :notes)'
     );
 
     $statement->execute([
         'name' => $customerData['name'],
-        'customer_type' => $customerData['customer_type'],
+        'phone_number' => $customerData['phone_number'],
+        'email' => $customerData['email'],
         'notes' => $customerData['notes'],
-        'renewal_status' => $customerData['renewal_status'],
-        'rating' => $customerData['rating'],
     ]);
 }
 
@@ -244,20 +225,18 @@ function coolopz_update_customer(int $customerId, array $customerData): void
     $statement = coolopz_db()->prepare(
         'UPDATE customers
          SET name = :name,
-             customer_type = :customer_type,
+             phone_number = :phone_number,
+             email = :email,
              notes = :notes,
-             renewal_status = :renewal_status,
-             rating = :rating
          WHERE id = :id'
     );
 
     $statement->execute([
         'id' => $customerId,
         'name' => $customerData['name'],
-        'customer_type' => $customerData['customer_type'],
+        'phone_number' => $customerData['phone_number'],
+        'email' => $customerData['email'],
         'notes' => $customerData['notes'],
-        'renewal_status' => $customerData['renewal_status'],
-        'rating' => $customerData['rating'],
     ]);
 }
 
