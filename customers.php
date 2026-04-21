@@ -249,6 +249,7 @@ include __DIR__ . '/includes/sidebar.php';
                                     <label class="form-label" for="phone_number_check">Phone No</label>
                                     <input class="form-control" id="phone_number_check" name="phone_number" type="text" inputmode="numeric" pattern="60[0-9]{9,10}" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>" placeholder="60123456789" required>
                                     <div class="form-text">Enter the phone number first. The system will save it as 60123456789 format.</div>
+                                    <div class="form-text" id="phone_number_check_normalized">Saved as: <?= htmlspecialchars($customerForm['phone_number'] !== '' ? $customerForm['phone_number'] : '-', ENT_QUOTES, 'UTF-8') ?></div>
                                 </div>
                                 <div class="col-12 jobs-form-actions">
                                     <button type="submit" class="btn btn-portal-primary">Check Phone No</button>
@@ -271,6 +272,7 @@ include __DIR__ . '/includes/sidebar.php';
 <?php else: ?>
                                     <div class="form-text">The system stores phone numbers as 60123456789 format.</div>
 <?php endif; ?>
+                                    <div class="form-text" id="phone_number_normalized">Saved as: <?= htmlspecialchars($customerForm['phone_number'] !== '' ? $customerForm['phone_number'] : '-', ENT_QUOTES, 'UTF-8') ?></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="name">Customer Name</label>
@@ -316,8 +318,14 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        var preview = document.getElementById(inputId + '_normalized');
+
         var normalizePhoneNumber = function () {
             input.value = input.value.replace(/\D+/g, '');
+
+            if (preview instanceof HTMLElement) {
+                preview.textContent = 'Saved as: ' + (input.value !== '' ? input.value : '-');
+            }
         };
 
         input.addEventListener('input', normalizePhoneNumber);

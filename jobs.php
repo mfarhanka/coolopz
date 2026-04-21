@@ -486,6 +486,7 @@ include __DIR__ . '/includes/sidebar.php';
                                 <div class="col-md-6">
                                     <label class="form-label" for="person_in_charge_contact">PIC Phone Number</label>
                                     <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="tel" inputmode="tel" value="<?= htmlspecialchars($jobForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Optional phone number">
+                                    <div class="form-text" id="person_in_charge_contact_normalized">Saved as: <?= htmlspecialchars($jobForm['person_in_charge_contact'] !== '' ? $jobForm['person_in_charge_contact'] : '-', ENT_QUOTES, 'UTF-8') ?></div>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="client_update_link">Client Update Link</label>
@@ -717,16 +718,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     var picPhoneInput = document.getElementById('person_in_charge_contact');
+    var picPhonePreview = document.getElementById('person_in_charge_contact_normalized');
 
     if (picPhoneInput instanceof HTMLInputElement) {
         var normalizePhone = function () {
             picPhoneInput.value = picPhoneInput.value.replace(/\D+/g, '');
+
+            if (picPhonePreview instanceof HTMLElement) {
+                picPhonePreview.textContent = 'Saved as: ' + (picPhoneInput.value !== '' ? picPhoneInput.value : '-');
+            }
         };
 
         picPhoneInput.addEventListener('input', normalizePhone);
         picPhoneInput.addEventListener('paste', function () {
             setTimeout(normalizePhone, 0);
         });
+
+        normalizePhone();
     }
 });
 </script>
