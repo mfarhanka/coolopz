@@ -507,6 +507,16 @@ function coolopz_customer_phone_lookup_key(string $phoneNumber): string
     return preg_replace('/\D+/', '', trim($phoneNumber)) ?? '';
 }
 
+function coolopz_normalize_customer_phone_number(string $phoneNumber): string
+{
+    return coolopz_customer_phone_lookup_key($phoneNumber);
+}
+
+function coolopz_is_valid_customer_phone_number(string $phoneNumber): bool
+{
+    return preg_match('/^60\d{9,10}$/', coolopz_normalize_customer_phone_number($phoneNumber)) === 1;
+}
+
 function coolopz_find_customer(int $customerId): ?array
 {
     $statement = coolopz_db()->prepare(

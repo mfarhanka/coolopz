@@ -47,10 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } elseif ($action === 'check_phone') {
-        $customerForm['phone_number'] = trim((string) ($_POST['phone_number'] ?? ''));
+        $customerForm['phone_number'] = coolopz_normalize_customer_phone_number((string) ($_POST['phone_number'] ?? ''));
 
         if ($customerForm['phone_number'] === '') {
             $errorMessage = 'Phone number is required before adding the customer details.';
+        } elseif (!coolopz_is_valid_customer_phone_number($customerForm['phone_number'])) {
+            $errorMessage = 'Phone number must use the 60123456789 format.';
         } else {
             $existingCustomer = coolopz_find_customer_by_phone_number($customerForm['phone_number']);
 
@@ -67,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $editCustomerId = $action === 'update' ? (int) ($_POST['customer_id'] ?? 0) : 0;
         $customerForm = [
             'name' => trim((string) ($_POST['name'] ?? '')),
-            'phone_number' => trim((string) ($_POST['phone_number'] ?? '')),
+            'phone_number' => coolopz_normalize_customer_phone_number((string) ($_POST['phone_number'] ?? '')),
             'email' => trim((string) ($_POST['email'] ?? '')),
             'notes' => trim((string) ($_POST['notes'] ?? '')),
         ];
@@ -81,6 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $shouldOpenCustomerModal = true;
         } elseif ($customerForm['name'] === '' || $customerForm['phone_number'] === '') {
             $errorMessage = 'Customer name and phone number are required.';
+            $shouldOpenCustomerModal = true;
+        } elseif (!coolopz_is_valid_customer_phone_number($customerForm['phone_number'])) {
+            $errorMessage = 'Phone number must use the 60123456789 format.';
             $shouldOpenCustomerModal = true;
         } elseif ($duplicateCustomer !== null) {
             $errorMessage = 'That phone number is already used by ' . $duplicateCustomer['name'] . '.';
@@ -242,8 +247,8 @@ include __DIR__ . '/includes/sidebar.php';
                                 <input type="hidden" name="action" value="check_phone">
                                 <div class="col-md-8">
                                     <label class="form-label" for="phone_number_check">Phone No</label>
-                                    <input class="form-control" id="phone_number_check" name="phone_number" type="text" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>" required>
-                                    <div class="form-text">Enter the phone number first so the system can check for an existing customer.</div>
+                                    <input class="form-control" id="phone_number_check" name="phone_number" type="text" inputmode="numeric" pattern="60[0-9]{9,10}" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>" placeholder="60123456789" required>
+                                    <div class="form-text">Enter the phone number first. The system will save it as 60123456789 format.</div>
                                 </div>
                                 <div class="col-12 jobs-form-actions">
                                     <button type="submit" class="btn btn-portal-primary">Check Phone No</button>
@@ -260,9 +265,11 @@ include __DIR__ . '/includes/sidebar.php';
 <?php endif; ?>
                                 <div class="col-md-6">
                                     <label class="form-label" for="phone_number">Phone No</label>
-                                    <input class="form-control" id="phone_number" name="phone_number" type="text" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>"<?= $editCustomerId === 0 ? ' readonly' : '' ?> required>
+                                    <input class="form-control" id="phone_number" name="phone_number" type="text" inputmode="numeric" pattern="60[0-9]{9,10}" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>" placeholder="60123456789"<?= $editCustomerId === 0 ? ' readonly' : '' ?> required>
 <?php if ($editCustomerId === 0): ?>
                                     <div class="form-text">Phone number already checked. Use Cancel to restart with a different number.</div>
+<?php else: ?>
+                                    <div class="form-text">The system stores phone numbers as 60123456789 format.</div>
 <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
@@ -301,4 +308,25 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 <?php endif; ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    ['phone_number_check', 'phone_number'].forEach(function (inputId) {
+        var input = document.getElementById(inputId);
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+
+        var normalizePhoneNumber = function () {
+            input.value = input.value.replace(/\D+/g, '');
+        };
+
+        input.addEventListener('input', normalizePhoneNumber);
+        input.addEventListener('paste', function () {
+            window.setTimeout(normalizePhoneNumber, 0);
+        });
+
+        normalizePhoneNumber();
+    });
+});
+</script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
