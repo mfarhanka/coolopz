@@ -104,11 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $allowedTechnicians = array_values(array_unique($allowedTechnicians));
 
-        if (
-            $jobForm['customer_name'] === ''
-            || $jobForm['technician_team'] === ''
-        ) {
-            $errorMessage = 'Customer and technician are required.';
+        if ($jobForm['technician_team'] === '') {
+            $errorMessage = 'Technician is required.';
             $shouldOpenJobModal = true;
         } elseif ($serviceTypes === []) {
             $errorMessage = 'Add at least one service before creating a job.';
@@ -116,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($jobForm['service_lines'] === []) {
             $errorMessage = 'Add at least one service type to the job.';
             $shouldOpenJobModal = true;
-        } elseif (!in_array($jobForm['customer_name'], $allowedCustomers, true)) {
+        } elseif ($jobForm['customer_name'] !== '' && !in_array($jobForm['customer_name'], $allowedCustomers, true)) {
             $errorMessage = 'Select a customer from the customer list.';
             $shouldOpenJobModal = true;
         } elseif (array_diff(array_column($jobForm['service_lines'], 'service_name'), $serviceTypes) !== []) {
@@ -269,7 +266,7 @@ include __DIR__ . '/includes/sidebar.php';
 <?php foreach ($jobs as $job): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($job['customer_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Add later', ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
                                             <strong class="d-block"><?= htmlspecialchars($job['service_type'], ENT_QUOTES, 'UTF-8') ?></strong>
                                             <span class="subtle-note"><?= htmlspecialchars($job['zone'] !== '' ? $job['zone'] : 'No zone assigned', ENT_QUOTES, 'UTF-8') ?></span>
@@ -329,8 +326,8 @@ include __DIR__ . '/includes/sidebar.php';
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="customer_name">Customer</label>
-                                    <select class="form-select" id="customer_name" name="customer_name" required>
-                                        <option value="">Select customer</option>
+                                    <select class="form-select" id="customer_name" name="customer_name">
+                                        <option value="">Add customer later</option>
 <?php foreach ($customerOptions as $customer): ?>
                                         <option value="<?= htmlspecialchars($customer['name'], ENT_QUOTES, 'UTF-8') ?>"<?= $jobForm['customer_name'] === $customer['name'] ? ' selected' : '' ?>><?= htmlspecialchars($customer['name'], ENT_QUOTES, 'UTF-8') ?></option>
 <?php endforeach; ?>
@@ -338,6 +335,7 @@ include __DIR__ . '/includes/sidebar.php';
                                         <option value="<?= htmlspecialchars($jobForm['customer_name'], ENT_QUOTES, 'UTF-8') ?>" selected><?= htmlspecialchars($jobForm['customer_name'] . ' (existing customer)', ENT_QUOTES, 'UTF-8') ?></option>
 <?php endif; ?>
                                     </select>
+                                    <div class="form-text">You can create the job now and assign the customer later.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="service_type">Service Type</label>
