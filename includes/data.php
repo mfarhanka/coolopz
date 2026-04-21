@@ -502,12 +502,44 @@ function coolopz_fetch_customers(): array
     return $statement->fetchAll();
 }
 
+function coolopz_customer_phone_lookup_key(string $phoneNumber): string
+{
+    return preg_replace('/\D+/', '', trim($phoneNumber)) ?? '';
+}
+
 function coolopz_find_customer(int $customerId): ?array
 {
     $statement = coolopz_db()->prepare(
         'SELECT id, name, phone_number, email, notes FROM customers WHERE id = :id LIMIT 1'
     );
     $statement->execute(['id' => $customerId]);
+    $customer = $statement->fetch();
+
+    return $customer === false ? null : $customer;
+}
+
+function coolopz_find_customer_by_phone_number(string $phoneNumber, ?int $excludeCustomerId = null): ?array
+{
+    $lookupKey = coolopz_customer_phone_lookup_key($phoneNumber);
+
+    if ($lookupKey === '') {
+        return null;
+    }
+
+        $sql = 'SELECT id, name, phone_number, email, notes
+            FROM customers
+            WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone_number, " ", ""), "-", ""), "(", ""), ")", ""), "+", "") = :lookup_key';
+    $params = ['lookup_key' => $lookupKey];
+
+    if ($excludeCustomerId !== null) {
+        $sql .= ' AND id <> :exclude_customer_id';
+        $params['exclude_customer_id'] = $excludeCustomerId;
+    }
+
+    $sql .= ' LIMIT 1';
+
+    $statement = coolopz_db()->prepare($sql);
+    $statement->execute($params);
     $customer = $statement->fetch();
 
     return $customer === false ? null : $customer;

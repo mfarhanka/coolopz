@@ -20,6 +20,8 @@ $successMessage = match ($messageKey) {
     default => '',
 };
 $shouldOpenCustomerModal = false;
+$customerPhoneChecked = false;
+$customerPhoneCheckMessage = '';
 
 $customerForm = [
     'name' => '',
@@ -32,6 +34,7 @@ $editCustomerId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? 'create');
+    $customerPhoneChecked = $action === 'update' || ((string) ($_POST['phone_checked'] ?? '0')) === '1';
 
     if ($action === 'delete') {
         $deleteCustomerId = (int) ($_POST['customer_id'] ?? 0);
@@ -43,6 +46,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: customers.php?message=deleted');
             exit;
         }
+    } elseif ($action === 'check_phone') {
+        $customerForm['phone_number'] = trim((string) ($_POST['phone_number'] ?? ''));
+
+        if ($customerForm['phone_number'] === '') {
+            $errorMessage = 'Phone number is required before adding the customer details.';
+        } else {
+            $existingCustomer = coolopz_find_customer_by_phone_number($customerForm['phone_number']);
+
+            if ($existingCustomer !== null) {
+                $errorMessage = 'That phone number is already used by ' . $existingCustomer['name'] . '.';
+            } else {
+                $customerPhoneChecked = true;
+                $customerPhoneCheckMessage = 'Phone number is available. Continue with the customer details.';
+            }
+        }
+
+        $shouldOpenCustomerModal = true;
     } else {
         $editCustomerId = $action === 'update' ? (int) ($_POST['customer_id'] ?? 0) : 0;
         $customerForm = [
@@ -51,9 +71,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => trim((string) ($_POST['email'] ?? '')),
             'notes' => trim((string) ($_POST['notes'] ?? '')),
         ];
+        $duplicateCustomer = coolopz_find_customer_by_phone_number(
+            $customerForm['phone_number'],
+            $action === 'update' ? $editCustomerId : null
+        );
 
-        if ($customerForm['name'] === '' || $customerForm['phone_number'] === '' || $customerForm['notes'] === '') {
+        if ($action !== 'update' && !$customerPhoneChecked) {
+            $errorMessage = 'Check the phone number before adding the customer details.';
+            $shouldOpenCustomerModal = true;
+        } elseif ($customerForm['name'] === '' || $customerForm['phone_number'] === '' || $customerForm['notes'] === '') {
             $errorMessage = 'Customer name, phone number, and notes are required.';
+            $shouldOpenCustomerModal = true;
+        } elseif ($duplicateCustomer !== null) {
+            $errorMessage = 'That phone number is already used by ' . $duplicateCustomer['name'] . '.';
             $shouldOpenCustomerModal = true;
         } elseif ($customerForm['email'] !== '' && filter_var($customerForm['email'], FILTER_VALIDATE_EMAIL) === false) {
             $errorMessage = 'Enter a valid email address or leave it blank.';
@@ -93,6 +123,7 @@ if ($editCustomerId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
         $editCustomerId = 0;
     } else {
         $shouldOpenCustomerModal = true;
+        $customerPhoneChecked = true;
         $customerForm = [
             'name' => $editingCustomer['name'],
             'phone_number' => $editingCustomer['phone_number'] ?? '',
@@ -202,18 +233,41 @@ include __DIR__ . '/includes/sidebar.php';
                             <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
+<?php if ($customerPhoneCheckMessage !== ''): ?>
+                            <div class="form-success" role="status"><?= htmlspecialchars($customerPhoneCheckMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+<?php if ($editCustomerId === 0 && !$customerPhoneChecked): ?>
+                            <form method="post" class="row g-2">
+                                <input type="hidden" name="action" value="check_phone">
+                                <div class="col-md-8">
+                                    <label class="form-label" for="phone_number_check">Phone No</label>
+                                    <input class="form-control" id="phone_number_check" name="phone_number" type="text" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>" required>
+                                    <div class="form-text">Enter the phone number first so the system can check for an existing customer.</div>
+                                </div>
+                                <div class="col-12 jobs-form-actions">
+                                    <button type="submit" class="btn btn-portal-primary">Check Phone No</button>
+                                    <a class="btn btn-portal-secondary" href="customers.php">Cancel</a>
+                                </div>
+                            </form>
+<?php else: ?>
                             <form method="post" class="row g-2">
                                 <input type="hidden" name="action" value="<?= $editCustomerId > 0 ? 'update' : 'create' ?>">
 <?php if ($editCustomerId > 0): ?>
                                 <input type="hidden" name="customer_id" value="<?= htmlspecialchars((string) $editCustomerId, ENT_QUOTES, 'UTF-8') ?>">
+<?php else: ?>
+                                <input type="hidden" name="phone_checked" value="1">
 <?php endif; ?>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="phone_number">Phone No</label>
+                                    <input class="form-control" id="phone_number" name="phone_number" type="text" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>"<?= $editCustomerId === 0 ? ' readonly' : '' ?> required>
+<?php if ($editCustomerId === 0): ?>
+                                    <div class="form-text">Phone number already checked. Use Cancel to restart with a different number.</div>
+<?php endif; ?>
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="name">Customer Name</label>
                                     <input class="form-control" id="name" name="name" type="text" value="<?= htmlspecialchars($customerForm['name'], ENT_QUOTES, 'UTF-8') ?>" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="phone_number">Phone No</label>
-                                    <input class="form-control" id="phone_number" name="phone_number" type="text" value="<?= htmlspecialchars($customerForm['phone_number'], ENT_QUOTES, 'UTF-8') ?>" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="email">Email</label>
@@ -228,6 +282,7 @@ include __DIR__ . '/includes/sidebar.php';
                                     <a class="btn btn-portal-secondary" href="customers.php">Cancel</a>
                                 </div>
                             </form>
+<?php endif; ?>
                         </div>
                     </div>
                 </div>
