@@ -84,6 +84,46 @@ function coolopz_ensure_services_table(PDO $pdo): void
     }
 }
 
+function coolopz_ensure_job_services_table(PDO $pdo): void
+{
+    static $jobServicesEnsured = false;
+
+    if ($jobServicesEnsured) {
+        return;
+    }
+
+    $jobServicesEnsured = true;
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS job_services (
+            job_id INT UNSIGNED NOT NULL,
+            service_name VARCHAR(120) NOT NULL,
+            PRIMARY KEY (job_id, service_name),
+            CONSTRAINT fk_job_services_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+        )'
+    );
+
+    $jobs = $pdo->query('SELECT id, service_type FROM jobs')->fetchAll();
+    $existingCounts = $pdo->query('SELECT job_id, COUNT(*) AS total FROM job_services GROUP BY job_id')->fetchAll(PDO::FETCH_KEY_PAIR);
+    $insertStatement = $pdo->prepare('INSERT IGNORE INTO job_services (job_id, service_name) VALUES (:job_id, :service_name)');
+
+    foreach ($jobs as $job) {
+        $jobId = (int) $job['id'];
+        if (($existingCounts[$jobId] ?? 0) > 0) {
+            continue;
+        }
+
+        $serviceNames = array_filter(array_map('trim', explode(',', (string) ($job['service_type'] ?? ''))), static fn (string $name): bool => $name !== '');
+
+        foreach (array_values(array_unique($serviceNames)) as $serviceName) {
+            $insertStatement->execute([
+                'job_id' => $jobId,
+                'service_name' => $serviceName,
+            ]);
+        }
+    }
+}
+
 function coolopz_db_config(): array
 {
     static $config;
@@ -120,6 +160,7 @@ function coolopz_db(): PDO
 
     coolopz_ensure_customer_contact_columns($pdo);
     coolopz_ensure_services_table($pdo);
+    coolopz_ensure_job_services_table($pdo);
 
     return $pdo;
 }

@@ -3,6 +3,52 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/database.php';
 
+function coolopz_normalize_service_names(array $serviceNames): array
+{
+    $normalized = [];
+
+    foreach ($serviceNames as $serviceName) {
+        $value = trim((string) $serviceName);
+        if ($value !== '') {
+            $normalized[] = $value;
+        }
+    }
+
+    return array_values(array_unique($normalized));
+}
+
+function coolopz_service_names_summary(array $serviceNames): string
+{
+    return implode(', ', coolopz_normalize_service_names($serviceNames));
+}
+
+function coolopz_fetch_job_service_names(int $jobId): array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT service_name FROM job_services WHERE job_id = :job_id ORDER BY service_name ASC'
+    );
+    $statement->execute(['job_id' => $jobId]);
+
+    return $statement->fetchAll(PDO::FETCH_COLUMN);
+}
+
+function coolopz_replace_job_services(PDO $pdo, int $jobId, array $serviceNames): void
+{
+    $deleteStatement = $pdo->prepare('DELETE FROM job_services WHERE job_id = :job_id');
+    $deleteStatement->execute(['job_id' => $jobId]);
+
+    $insertStatement = $pdo->prepare(
+        'INSERT INTO job_services (job_id, service_name) VALUES (:job_id, :service_name)'
+    );
+
+    foreach (coolopz_normalize_service_names($serviceNames) as $serviceName) {
+        $insertStatement->execute([
+            'job_id' => $jobId,
+            'service_name' => $serviceName,
+        ]);
+    }
+}
+
 function coolopz_status_badge_class(string $status): string
 {
     return match ($status) {
@@ -29,9 +75,17 @@ function coolopz_fetch_priority_jobs(int $limit = 4): array
 {
     $pdo = coolopz_db();
     $statement = $pdo->prepare(
-        "SELECT ticket_number, customer_name, service_type, technician_team, zone, status, priority_level
+        "SELECT jobs.ticket_number,
+                jobs.customer_name,
+                COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
+                jobs.technician_team,
+                jobs.zone,
+                jobs.status,
+                jobs.priority_level
          FROM jobs
-         ORDER BY FIELD(status, 'Urgent', 'In Progress', 'Queued', 'Completed'), id DESC
+         LEFT JOIN job_services ON job_services.job_id = jobs.id
+         GROUP BY jobs.id
+              ORDER BY FIELD(jobs.status, 'Urgent', 'In Progress', 'Queued', 'Completed'), jobs.id DESC
          LIMIT :limit"
     );
     $statement->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -95,9 +149,21 @@ function coolopz_generate_job_ticket_number(): string
 function coolopz_fetch_jobs(): array
 {
     $statement = coolopz_db()->query(
-        "SELECT id, ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes, created_at
+        "SELECT jobs.id,
+                jobs.ticket_number,
+                jobs.customer_name,
+                COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
+                jobs.technician_team,
+                jobs.zone,
+                jobs.status,
+                jobs.priority_level,
+                jobs.billed_amount,
+                jobs.notes,
+                jobs.created_at
          FROM jobs
-         ORDER BY FIELD(status, 'Urgent', 'In Progress', 'Queued', 'Completed'), id DESC"
+         LEFT JOIN job_services ON job_services.job_id = jobs.id
+         GROUP BY jobs.id
+         ORDER BY FIELD(jobs.status, 'Urgent', 'In Progress', 'Queued', 'Completed'), jobs.id DESC"
     );
 
     return $statement->fetchAll();
@@ -106,7 +172,21 @@ function coolopz_fetch_jobs(): array
 function coolopz_find_job(int $jobId): ?array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT id, ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes FROM jobs WHERE id = :id LIMIT 1'
+        "SELECT jobs.id,
+                jobs.ticket_number,
+                jobs.customer_name,
+                COALESCE(NULLIF(GROUP_CONCAT(job_services.service_name ORDER BY job_services.service_name SEPARATOR ', '), ''), jobs.service_type) AS service_type,
+                jobs.technician_team,
+                jobs.zone,
+                jobs.status,
+                jobs.priority_level,
+                jobs.billed_amount,
+                jobs.notes
+         FROM jobs
+         LEFT JOIN job_services ON job_services.job_id = jobs.id
+         WHERE jobs.id = :id
+         GROUP BY jobs.id
+         LIMIT 1"
     );
     $statement->execute(['id' => $jobId]);
     $job = $statement->fetch();
@@ -116,27 +196,39 @@ function coolopz_find_job(int $jobId): ?array
 
 function coolopz_create_job(array $jobData): void
 {
-    $statement = coolopz_db()->prepare(
+    $pdo = coolopz_db();
+    $statement = $pdo->prepare(
         'INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes)
          VALUES (:ticket_number, :customer_name, :service_type, :technician_team, :zone, :status, :priority_level, :billed_amount, :notes)'
     );
 
-    $statement->execute([
-        'ticket_number' => $jobData['ticket_number'],
-        'customer_name' => $jobData['customer_name'],
-        'service_type' => $jobData['service_type'],
-        'technician_team' => $jobData['technician_team'],
-        'zone' => $jobData['zone'],
-        'status' => $jobData['status'],
-        'priority_level' => $jobData['priority_level'],
-        'billed_amount' => $jobData['billed_amount'],
-        'notes' => $jobData['notes'],
-    ]);
+    $pdo->beginTransaction();
+
+    try {
+        $statement->execute([
+            'ticket_number' => $jobData['ticket_number'],
+            'customer_name' => $jobData['customer_name'],
+            'service_type' => coolopz_service_names_summary($jobData['service_types']),
+            'technician_team' => $jobData['technician_team'],
+            'zone' => $jobData['zone'],
+            'status' => $jobData['status'],
+            'priority_level' => $jobData['priority_level'],
+            'billed_amount' => $jobData['billed_amount'],
+            'notes' => $jobData['notes'],
+        ]);
+
+        coolopz_replace_job_services($pdo, (int) $pdo->lastInsertId(), $jobData['service_types']);
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
 }
 
 function coolopz_update_job(int $jobId, array $jobData): void
 {
-    $statement = coolopz_db()->prepare(
+    $pdo = coolopz_db();
+    $statement = $pdo->prepare(
         'UPDATE jobs
          SET ticket_number = :ticket_number,
              customer_name = :customer_name,
@@ -150,18 +242,28 @@ function coolopz_update_job(int $jobId, array $jobData): void
          WHERE id = :id'
     );
 
-    $statement->execute([
-        'id' => $jobId,
-        'ticket_number' => $jobData['ticket_number'],
-        'customer_name' => $jobData['customer_name'],
-        'service_type' => $jobData['service_type'],
-        'technician_team' => $jobData['technician_team'],
-        'zone' => $jobData['zone'],
-        'status' => $jobData['status'],
-        'priority_level' => $jobData['priority_level'],
-        'billed_amount' => $jobData['billed_amount'],
-        'notes' => $jobData['notes'],
-    ]);
+    $pdo->beginTransaction();
+
+    try {
+        $statement->execute([
+            'id' => $jobId,
+            'ticket_number' => $jobData['ticket_number'],
+            'customer_name' => $jobData['customer_name'],
+            'service_type' => coolopz_service_names_summary($jobData['service_types']),
+            'technician_team' => $jobData['technician_team'],
+            'zone' => $jobData['zone'],
+            'status' => $jobData['status'],
+            'priority_level' => $jobData['priority_level'],
+            'billed_amount' => $jobData['billed_amount'],
+            'notes' => $jobData['notes'],
+        ]);
+
+        coolopz_replace_job_services($pdo, $jobId, $jobData['service_types']);
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
 }
 
 function coolopz_delete_job(int $jobId): void
@@ -265,9 +367,9 @@ function coolopz_fetch_service_breakdown(): array
 {
     $pdo = coolopz_db();
     $rows = $pdo->query(
-        "SELECT service_type, COUNT(*) AS total
-         FROM jobs
-         GROUP BY service_type
+        "SELECT service_name AS service_type, COUNT(*) AS total
+         FROM job_services
+         GROUP BY service_name
          ORDER BY total DESC"
     )->fetchAll();
 

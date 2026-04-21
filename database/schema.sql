@@ -37,6 +37,13 @@ CREATE TABLE IF NOT EXISTS jobs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS job_services (
+    job_id INT UNSIGNED NOT NULL,
+    service_name VARCHAR(120) NOT NULL,
+    PRIMARY KEY (job_id, service_name),
+    CONSTRAINT fk_job_services_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS services (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
@@ -98,3 +105,10 @@ VALUES
 ON DUPLICATE KEY UPDATE
     default_price = VALUES(default_price),
     notes = VALUES(notes);
+
+INSERT INTO job_services (job_id, service_name)
+SELECT id, service_type
+FROM jobs
+WHERE service_type <> ''
+ON DUPLICATE KEY UPDATE
+    service_name = VALUES(service_name);
