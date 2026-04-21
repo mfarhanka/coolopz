@@ -209,6 +209,7 @@ include __DIR__ . '/includes/sidebar.php';
                                     <p><?= htmlspecialchars($customer['notes'], ENT_QUOTES, 'UTF-8') ?></p>
                                 </div>
                                 <div class="jobs-actions justify-content-end">
+                                    <a class="btn btn-outline-primary btn-sm" href="jobs.php?customer_id=<?= htmlspecialchars((string) $customer['id'], ENT_QUOTES, 'UTF-8') ?>">Create Job</a>
                                     <a class="btn btn-portal-secondary btn-sm" href="customers.php?edit=<?= htmlspecialchars((string) $customer['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
                                     <form method="post" class="m-0" onsubmit="return confirm('Delete this customer?');">
                                         <input type="hidden" name="action" value="delete">

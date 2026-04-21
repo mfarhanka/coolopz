@@ -59,7 +59,17 @@ $jobForm = [
     'notes' => '',
 ];
 
+$prefillCustomerId = isset($_GET['customer_id']) ? (int) $_GET['customer_id'] : 0;
 $editJobId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $editJobId === 0 && $prefillCustomerId > 0) {
+    $prefillCustomer = coolopz_find_customer($prefillCustomerId);
+
+    if ($prefillCustomer !== null) {
+        $jobForm['customer_name'] = (string) ($prefillCustomer['name'] ?? '');
+        $shouldOpenJobModal = true;
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? 'create');
