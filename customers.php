@@ -79,8 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action !== 'update' && !$customerPhoneChecked) {
             $errorMessage = 'Check the phone number before adding the customer details.';
             $shouldOpenCustomerModal = true;
-        } elseif ($customerForm['name'] === '' || $customerForm['phone_number'] === '' || $customerForm['notes'] === '') {
-            $errorMessage = 'Customer name, phone number, and notes are required.';
+        } elseif ($customerForm['name'] === '' || $customerForm['phone_number'] === '') {
+            $errorMessage = 'Customer name and phone number are required.';
             $shouldOpenCustomerModal = true;
         } elseif ($duplicateCustomer !== null) {
             $errorMessage = 'That phone number is already used by ' . $duplicateCustomer['name'] . '.';
@@ -275,7 +275,7 @@ include __DIR__ . '/includes/sidebar.php';
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="notes">Notes</label>
-                                    <textarea class="form-control notes-field" id="notes" name="notes" rows="4" required><?= htmlspecialchars($customerForm['notes'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                                    <textarea class="form-control notes-field" id="notes" name="notes" rows="4"><?= htmlspecialchars($customerForm['notes'], ENT_QUOTES, 'UTF-8') ?></textarea>
                                 </div>
                                 <div class="col-12 jobs-form-actions">
                                     <button type="submit" class="btn btn-portal-primary"><?= $editCustomerId > 0 ? 'Save Changes' : 'Create Customer' ?></button>
