@@ -78,6 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $allowedCustomers = array_values(array_unique($allowedCustomers));
 
+        if ($action === 'update' && $existingJob !== null && $existingJob['service_type'] !== '') {
+            $serviceTypes[] = $existingJob['service_type'];
+        }
+        $serviceTypes = array_values(array_unique($serviceTypes));
+
         if ($action === 'update' && $existingJob !== null && $existingJob['technician_team'] !== '') {
             $allowedTechnicians[] = $existingJob['technician_team'];
         }

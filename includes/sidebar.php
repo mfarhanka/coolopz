@@ -21,6 +21,12 @@ $navItems = [
         'icon' => '<path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 4.13a4 4 0 0 1 0 7.75"></path>',
     ],
     [
+        'key' => 'services',
+        'href' => 'services.php',
+        'label' => 'Services',
+        'icon' => '<path d="M20 7 9 18l-5-5"></path><path d="M14 7h6v6"></path><path d="M4 7h5"></path><path d="M4 12h8"></path>',
+    ],
+    [
         'key' => 'reports',
         'href' => 'reports.php',
         'label' => 'Reports',

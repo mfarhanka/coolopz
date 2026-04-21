@@ -53,14 +53,13 @@ function coolopz_fetch_job_metrics(): array
 
 function coolopz_job_service_types(): array
 {
-    return [
-        'Maintenance',
-        'Preventive Maintenance',
-        'Repair',
-        'Installation',
-        'Gas Top-Up',
-        'Inspection',
-    ];
+    $statement = coolopz_db()->query('SELECT name FROM services ORDER BY name ASC');
+    $services = $statement->fetchAll(PDO::FETCH_COLUMN);
+
+    return $services !== [] ? array_values($services) : array_map(
+        static fn (array $service): string => $service['name'],
+        coolopz_default_services()
+    );
 }
 
 function coolopz_job_statuses(): array
@@ -227,7 +226,7 @@ function coolopz_update_customer(int $customerId, array $customerData): void
          SET name = :name,
              phone_number = :phone_number,
              email = :email,
-             notes = :notes,
+             notes = :notes
          WHERE id = :id'
     );
 
@@ -374,4 +373,73 @@ function coolopz_delete_staff_user(int $userId): void
 {
     $statement = coolopz_db()->prepare('DELETE FROM users WHERE id = :id');
     $statement->execute(['id' => $userId]);
+}
+
+function coolopz_fetch_service_metrics(): array
+{
+    $pdo = coolopz_db();
+
+    return [
+        'total' => (int) $pdo->query('SELECT COUNT(*) FROM services')->fetchColumn(),
+        'priced' => (int) $pdo->query('SELECT COUNT(*) FROM services WHERE default_price > 0')->fetchColumn(),
+        'average_price' => (float) $pdo->query('SELECT COALESCE(AVG(default_price), 0) FROM services')->fetchColumn(),
+    ];
+}
+
+function coolopz_fetch_services(): array
+{
+    $statement = coolopz_db()->query(
+        'SELECT id, name, default_price, notes, created_at FROM services ORDER BY name ASC'
+    );
+
+    return $statement->fetchAll();
+}
+
+function coolopz_find_service(int $serviceId): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id, name, default_price, notes FROM services WHERE id = :id LIMIT 1'
+    );
+    $statement->execute(['id' => $serviceId]);
+    $service = $statement->fetch();
+
+    return $service === false ? null : $service;
+}
+
+function coolopz_create_service(array $serviceData): void
+{
+    $statement = coolopz_db()->prepare(
+        'INSERT INTO services (name, default_price, notes)
+         VALUES (:name, :default_price, :notes)'
+    );
+
+    $statement->execute([
+        'name' => $serviceData['name'],
+        'default_price' => $serviceData['default_price'],
+        'notes' => $serviceData['notes'],
+    ]);
+}
+
+function coolopz_update_service(int $serviceId, array $serviceData): void
+{
+    $statement = coolopz_db()->prepare(
+        'UPDATE services
+         SET name = :name,
+             default_price = :default_price,
+             notes = :notes
+         WHERE id = :id'
+    );
+
+    $statement->execute([
+        'id' => $serviceId,
+        'name' => $serviceData['name'],
+        'default_price' => $serviceData['default_price'],
+        'notes' => $serviceData['notes'],
+    ]);
+}
+
+function coolopz_delete_service(int $serviceId): void
+{
+    $statement = coolopz_db()->prepare('DELETE FROM services WHERE id = :id');
+    $statement->execute(['id' => $serviceId]);
 }

@@ -37,6 +37,15 @@ CREATE TABLE IF NOT EXISTS jobs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS services (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    default_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    notes VARCHAR(255) NOT NULL DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_service_name (name)
+);
+
 INSERT INTO users (email, full_name, role_name, password_hash)
 VALUES ('admin@coolopz.local', 'Admin User', 'Operations Admin', '$2y$10$C9hFVK0LFCUv2aw9zR/ChOZRpZHcC/UmCJyFpAjIjFzSM3t.O2b82')
 ON DUPLICATE KEY UPDATE
@@ -78,4 +87,14 @@ ON DUPLICATE KEY UPDATE
     status = VALUES(status),
     priority_level = VALUES(priority_level),
     billed_amount = VALUES(billed_amount),
+    notes = VALUES(notes);
+
+INSERT INTO services (name, default_price, notes)
+VALUES
+    ('Chemical Service', 250.00, 'Deep cleaning service for indoor and outdoor units.'),
+    ('Installation', 450.00, 'Standard aircond installation service.'),
+    ('Repair', 180.00, 'General troubleshooting and repair work.'),
+    ('Transport Fee', 50.00, 'Additional transport or outstation charge.')
+ON DUPLICATE KEY UPDATE
+    default_price = VALUES(default_price),
     notes = VALUES(notes);
