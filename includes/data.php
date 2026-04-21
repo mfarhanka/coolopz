@@ -82,6 +82,17 @@ function coolopz_job_priorities(): array
     ];
 }
 
+function coolopz_generate_job_ticket_number(): string
+{
+    $nextSequence = (int) coolopz_db()->query(
+        "SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(ticket_number, '-', -1) AS UNSIGNED)), 2034) + 1
+         FROM jobs
+         WHERE ticket_number LIKE '#JOB-%'"
+    )->fetchColumn();
+
+    return sprintf('#JOB-%04d', $nextSequence);
+}
+
 function coolopz_fetch_jobs(): array
 {
     $statement = coolopz_db()->query(
@@ -317,6 +328,18 @@ function coolopz_fetch_staff_users(): array
 {
     $statement = coolopz_db()->query(
         'SELECT id, full_name, email, role_name, created_at FROM users ORDER BY created_at DESC, id DESC'
+    );
+
+    return $statement->fetchAll();
+}
+
+function coolopz_fetch_assignable_staff(): array
+{
+    $statement = coolopz_db()->query(
+        "SELECT id, full_name, role_name
+         FROM users
+         WHERE role_name <> 'Operations Admin'
+         ORDER BY full_name ASC"
     );
 
     return $statement->fetchAll();
