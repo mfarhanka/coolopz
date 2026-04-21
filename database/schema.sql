@@ -58,14 +58,14 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO jobs (ticket_number, customer_name, service_type, technician_team, zone, status, priority_level, billed_amount, notes)
 VALUES
-    ('#COP-2048', 'Northpoint Suites', 'Repair', 'Team Alpha', 'KL Central', 'Urgent', 'High', 2800.00, 'Awaiting compressor parts after diagnosis.'),
-    ('#COP-2045', 'Pelita Food Hall', 'Maintenance', 'Team Delta', 'Shah Alam', 'In Progress', 'Medium', 1800.00, 'Routine maintenance in progress.'),
-    ('#COP-2042', 'Riverview Co-Working', 'Installation', 'Team Sigma', 'Putrajaya', 'Queued', 'Medium', 4200.00, 'Installation queued for afternoon handover.'),
-    ('#COP-2039', 'Harbor Dental Clinic', 'Gas Top-Up', 'Team Nova', 'Ampang', 'Completed', 'Low', 950.00, 'Completed and signed off.'),
-    ('#COP-2038', 'Meridian Office Park', 'Preventive Maintenance', 'Team Orion', 'KLCC', 'Completed', 'Low', 3600.00, 'Monthly service completed.'),
-    ('#COP-2037', 'Bloom Pediatric Center', 'Repair', 'Team Echo', 'Damansara', 'In Progress', 'High', 2200.00, 'Electrical fault under inspection.'),
-    ('#COP-2036', 'Casa Bayu Residence', 'Maintenance', 'Team Nova', 'Cheras', 'Queued', 'Low', 650.00, 'Scheduled maintenance visit.'),
-    ('#COP-2035', 'Skyline Residence', 'Repair', 'Team Delta', 'Mont Kiara', 'Urgent', 'High', 3100.00, 'Urgent outage reported by management.')
+    ('#JOB-2048', 'Northpoint Suites', 'Repair', 'Team Alpha', 'KL Central', 'Urgent', 'High', 2800.00, 'Awaiting compressor parts after diagnosis.'),
+    ('#JOB-2045', 'Pelita Food Hall', 'Maintenance', 'Team Delta', 'Shah Alam', 'In Progress', 'Medium', 1800.00, 'Routine maintenance in progress.'),
+    ('#JOB-2042', 'Riverview Co-Working', 'Installation', 'Team Sigma', 'Putrajaya', 'Queued', 'Medium', 4200.00, 'Installation queued for afternoon handover.'),
+    ('#JOB-2039', 'Harbor Dental Clinic', 'Gas Top-Up', 'Team Nova', 'Ampang', 'Completed', 'Low', 950.00, 'Completed and signed off.'),
+    ('#JOB-2038', 'Meridian Office Park', 'Preventive Maintenance', 'Team Orion', 'KLCC', 'Completed', 'Low', 3600.00, 'Monthly service completed.'),
+    ('#JOB-2037', 'Bloom Pediatric Center', 'Repair', 'Team Echo', 'Damansara', 'In Progress', 'High', 2200.00, 'Electrical fault under inspection.'),
+    ('#JOB-2036', 'Casa Bayu Residence', 'Maintenance', 'Team Nova', 'Cheras', 'Queued', 'Low', 650.00, 'Scheduled maintenance visit.'),
+    ('#JOB-2035', 'Skyline Residence', 'Repair', 'Team Delta', 'Mont Kiara', 'Urgent', 'High', 3100.00, 'Urgent outage reported by management.')
 ON DUPLICATE KEY UPDATE
     customer_name = VALUES(customer_name),
     service_type = VALUES(service_type),
