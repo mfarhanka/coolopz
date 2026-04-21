@@ -8,6 +8,8 @@ $successMessage = '';
 $job = null;
 $serviceLines = [];
 $serviceTotal = 0.0;
+$defaultPersonInChargeName = '';
+$defaultPersonInChargeContact = '';
 $clientForm = [
     'site_address' => '',
     'google_maps_url' => '',
@@ -37,11 +39,18 @@ if ($token === '') {
             }
         }
 
+        $defaultPersonInChargeName = trim((string) ($job['customer_name'] ?? ''));
+        $defaultPersonInChargeContact = coolopz_normalize_phone_number((string) ($job['customer_phone_number'] ?? ''));
+
         $clientForm = [
             'site_address' => (string) ($job['site_address'] ?? ''),
             'google_maps_url' => (string) ($job['google_maps_url'] ?? ''),
-            'person_in_charge_name' => (string) ($job['person_in_charge_name'] ?? ''),
-            'person_in_charge_contact' => (string) ($job['person_in_charge_contact'] ?? ''),
+            'person_in_charge_name' => trim((string) ($job['person_in_charge_name'] ?? '')) !== ''
+                ? (string) $job['person_in_charge_name']
+                : $defaultPersonInChargeName,
+            'person_in_charge_contact' => trim((string) ($job['person_in_charge_contact'] ?? '')) !== ''
+                ? (string) $job['person_in_charge_contact']
+                : $defaultPersonInChargeContact,
         ];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -102,6 +111,9 @@ if ($token === '') {
                 <div>
                     <strong class="d-block">Customer</strong>
                     <span><?= htmlspecialchars($job['customer_name'] !== '' ? $job['customer_name'] : 'Not assigned yet', ENT_QUOTES, 'UTF-8') ?></span>
+<?php if (($job['customer_phone_number'] ?? '') !== ''): ?>
+                    <span class="subtle-note d-block"><?= htmlspecialchars((string) $job['customer_phone_number'], ENT_QUOTES, 'UTF-8') ?></span>
+<?php endif; ?>
                 </div>
             </div>
 
@@ -153,10 +165,12 @@ if ($token === '') {
                 <div class="col-md-6">
                     <label class="form-label" for="person_in_charge_name">Person In Charge Name</label>
                     <input class="form-control" id="person_in_charge_name" name="person_in_charge_name" type="text" value="<?= htmlspecialchars($clientForm['person_in_charge_name'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Contact person name">
+                    <div class="form-text">Defaulted to the customer name. Change it only if the Person In Charge is someone else.</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="person_in_charge_contact">Person In Charge Phone Number</label>
                     <input class="form-control" id="person_in_charge_contact" name="person_in_charge_contact" type="tel" inputmode="tel" value="<?= htmlspecialchars($clientForm['person_in_charge_contact'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Phone number only">
+                    <div class="form-text">Defaulted to the customer contact number. Update it only if the Person In Charge number is different from the customer's contact.</div>
                 </div>
                 <div class="col-12 d-flex gap-2">
                     <button type="submit" class="btn btn-portal-primary">Submit Details</button>

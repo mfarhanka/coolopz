@@ -434,17 +434,19 @@ function coolopz_delete_job(int $jobId): void
 function coolopz_find_job_by_client_token(string $token): ?array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT id,
-                ticket_number,
-                customer_name,
-                service_type,
-                billed_amount,
-                site_address,
-                google_maps_url,
-                person_in_charge_name,
-                person_in_charge_contact,
-                client_update_token
+    'SELECT jobs.id,
+        jobs.ticket_number,
+        jobs.customer_name,
+                customers.phone_number AS customer_phone_number,
+        jobs.service_type,
+        jobs.billed_amount,
+        jobs.site_address,
+        jobs.google_maps_url,
+        jobs.person_in_charge_name,
+        jobs.person_in_charge_contact,
+        jobs.client_update_token
          FROM jobs
+         LEFT JOIN customers ON customers.name = jobs.customer_name
          WHERE client_update_token = :token
          LIMIT 1'
     );
