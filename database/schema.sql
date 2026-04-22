@@ -51,6 +51,20 @@ CREATE TABLE IF NOT EXISTS job_services (
     CONSTRAINT fk_job_services_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS job_report_photos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    job_id INT UNSIGNED NOT NULL,
+    service_name VARCHAR(120) NOT NULL DEFAULT '',
+    report_type VARCHAR(40) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL DEFAULT '',
+    uploaded_by_name VARCHAR(120) NOT NULL DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_job_report_photo (job_id, service_name, report_type),
+    CONSTRAINT fk_job_report_photos_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS services (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,

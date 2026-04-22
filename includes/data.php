@@ -133,6 +133,182 @@ function coolopz_fetch_job_service_lines(int $jobId): array
     return $statement->fetchAll();
 }
 
+function coolopz_job_report_upload_directory(): string
+{
+    return dirname(__DIR__) . '/uploads/job-report-photos';
+}
+
+function coolopz_job_report_upload_relative_path(string $fileName): string
+{
+    return 'uploads/job-report-photos/' . ltrim($fileName, '/');
+}
+
+function coolopz_job_report_file_slug(string $value): string
+{
+    $slug = strtolower(trim($value));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+    $slug = trim($slug, '-');
+
+    return $slug !== '' ? $slug : 'report';
+}
+
+function coolopz_fetch_job_report_photos(int $jobId): array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id,
+                job_id,
+                service_name,
+                report_type,
+                file_path,
+                original_name,
+                uploaded_by_name,
+                created_at,
+                updated_at
+         FROM job_report_photos
+         WHERE job_id = :job_id
+         ORDER BY service_name ASC, report_type ASC'
+    );
+    $statement->execute(['job_id' => $jobId]);
+
+    return $statement->fetchAll();
+}
+
+function coolopz_job_report_photo_map(int $jobId): array
+{
+    $map = [
+        'services' => [],
+        'gas_meter' => [
+            'before' => null,
+            'after' => null,
+        ],
+    ];
+
+    foreach (coolopz_fetch_job_report_photos($jobId) as $photo) {
+        $reportType = (string) ($photo['report_type'] ?? '');
+        $serviceName = (string) ($photo['service_name'] ?? '');
+
+        if ($reportType === 'gas_meter_before') {
+            $map['gas_meter']['before'] = $photo;
+            continue;
+        }
+
+        if ($reportType === 'gas_meter_after') {
+            $map['gas_meter']['after'] = $photo;
+            continue;
+        }
+
+        if ($serviceName === '') {
+            continue;
+        }
+
+        if (!isset($map['services'][$serviceName])) {
+            $map['services'][$serviceName] = [
+                'before' => null,
+                'after' => null,
+            ];
+        }
+
+        if ($reportType === 'service_before') {
+            $map['services'][$serviceName]['before'] = $photo;
+        } elseif ($reportType === 'service_after') {
+            $map['services'][$serviceName]['after'] = $photo;
+        }
+    }
+
+    return $map;
+}
+
+function coolopz_store_job_report_photo(int $jobId, string $serviceName, string $reportType, array $uploadedFile, string $uploadedByName): void
+{
+    $uploadError = (int) ($uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE);
+
+    if ($uploadError === UPLOAD_ERR_NO_FILE) {
+        return;
+    }
+
+    if ($uploadError !== UPLOAD_ERR_OK) {
+        throw new RuntimeException('Unable to upload one of the report photos.');
+    }
+
+    $tmpName = (string) ($uploadedFile['tmp_name'] ?? '');
+    if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+        throw new RuntimeException('The uploaded report photo is invalid.');
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = (string) $finfo->file($tmpName);
+    $allowedMimeTypes = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+    ];
+
+    if (!isset($allowedMimeTypes[$mimeType])) {
+        throw new RuntimeException('Only JPG, PNG, or WebP report photos are allowed.');
+    }
+
+    $uploadDirectory = coolopz_job_report_upload_directory();
+    if (!is_dir($uploadDirectory) && !mkdir($uploadDirectory, 0775, true) && !is_dir($uploadDirectory)) {
+        throw new RuntimeException('Unable to prepare the report photo upload folder.');
+    }
+
+    $serviceFragment = $serviceName !== '' ? coolopz_job_report_file_slug($serviceName) : 'gas-meter';
+    $reportFragment = coolopz_job_report_file_slug($reportType);
+    $extension = $allowedMimeTypes[$mimeType];
+    $fileName = sprintf(
+        'job-%d-%s-%s-%s.%s',
+        $jobId,
+        $serviceFragment,
+        $reportFragment,
+        substr(coolopz_generate_secure_token(8), 0, 16),
+        $extension
+    );
+    $relativePath = coolopz_job_report_upload_relative_path($fileName);
+    $destinationPath = $uploadDirectory . '/' . $fileName;
+
+    if (!move_uploaded_file($tmpName, $destinationPath)) {
+        throw new RuntimeException('Unable to save the uploaded report photo.');
+    }
+
+    $pdo = coolopz_db();
+    $existingStatement = $pdo->prepare(
+        'SELECT file_path
+         FROM job_report_photos
+         WHERE job_id = :job_id AND service_name = :service_name AND report_type = :report_type
+         LIMIT 1'
+    );
+    $existingStatement->execute([
+        'job_id' => $jobId,
+        'service_name' => $serviceName,
+        'report_type' => $reportType,
+    ]);
+    $existingPath = $existingStatement->fetchColumn();
+
+    $statement = $pdo->prepare(
+        'INSERT INTO job_report_photos (job_id, service_name, report_type, file_path, original_name, uploaded_by_name)
+         VALUES (:job_id, :service_name, :report_type, :file_path, :original_name, :uploaded_by_name)
+         ON DUPLICATE KEY UPDATE
+             file_path = VALUES(file_path),
+             original_name = VALUES(original_name),
+             uploaded_by_name = VALUES(uploaded_by_name)'
+    );
+    $statement->execute([
+        'job_id' => $jobId,
+        'service_name' => $serviceName,
+        'report_type' => $reportType,
+        'file_path' => $relativePath,
+        'original_name' => basename((string) ($uploadedFile['name'] ?? 'report-photo')),
+        'uploaded_by_name' => trim($uploadedByName) !== '' ? trim($uploadedByName) : 'Technician',
+    ]);
+
+    if (is_string($existingPath) && $existingPath !== '' && $existingPath !== $relativePath) {
+        $existingAbsolutePath = dirname(__DIR__) . '/' . ltrim(str_replace('\\', '/', $existingPath), '/');
+        if (is_file($existingAbsolutePath)) {
+            @unlink($existingAbsolutePath);
+        }
+    }
+}
+
 function coolopz_service_price_map(): array
 {
     $statement = coolopz_db()->query('SELECT name, default_price FROM services');

@@ -8,6 +8,13 @@ $successMessage = '';
 $job = null;
 $serviceLines = [];
 $serviceTotal = 0.0;
+$jobReportPhotoMap = [
+    'services' => [],
+    'gas_meter' => [
+        'before' => null,
+        'after' => null,
+    ],
+];
 $defaultPersonInChargeName = '';
 $defaultPersonInChargeContact = '';
 $clientForm = [
@@ -26,6 +33,7 @@ if ($token === '') {
         $errorMessage = 'This update link is no longer valid.';
     } else {
         $serviceLines = coolopz_fetch_job_service_lines((int) $job['id']);
+        $jobReportPhotoMap = coolopz_job_report_photo_map((int) $job['id']);
         $serviceTotal = $serviceLines !== []
             ? coolopz_calculate_billed_amount($serviceLines)
             : (float) ($job['billed_amount'] ?? 0);
@@ -152,6 +160,76 @@ if ($token === '') {
 <?php else: ?>
                 <p class="subtle-note mb-0">No services have been added to this job yet.</p>
 <?php endif; ?>
+            </div>
+
+            <div class="simple-panel mb-3">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-2">
+                    <div>
+                        <strong class="d-block">Technician Photo Report</strong>
+                        <span class="subtle-note">Before and after photos will appear here as the technician uploads them.</span>
+                    </div>
+                </div>
+<?php if ($serviceLines !== []): ?>
+                <div class="row g-3">
+<?php foreach ($serviceLines as $serviceLine): ?>
+<?php $serviceName = (string) $serviceLine['service_name']; ?>
+<?php $servicePhotos = $jobReportPhotoMap['services'][$serviceName] ?? ['before' => null, 'after' => null]; ?>
+                    <div class="col-12">
+                        <div class="simple-panel">
+                            <strong class="d-block mb-2"><?= htmlspecialchars($serviceName, ENT_QUOTES, 'UTF-8') ?></strong>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <span class="subtle-note d-block mb-2">Before</span>
+<?php if (($servicePhotos['before']['file_path'] ?? '') !== ''): ?>
+                                    <a href="<?= htmlspecialchars((string) $servicePhotos['before']['file_path'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                        <img class="img-fluid rounded border" src="<?= htmlspecialchars((string) $servicePhotos['before']['file_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($serviceName . ' before photo', ENT_QUOTES, 'UTF-8') ?>" style="max-height: 180px; object-fit: cover;">
+                                    </a>
+<?php else: ?>
+                                    <div class="subtle-note">No before photo uploaded yet.</div>
+<?php endif; ?>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="subtle-note d-block mb-2">After</span>
+<?php if (($servicePhotos['after']['file_path'] ?? '') !== ''): ?>
+                                    <a href="<?= htmlspecialchars((string) $servicePhotos['after']['file_path'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                        <img class="img-fluid rounded border" src="<?= htmlspecialchars((string) $servicePhotos['after']['file_path'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($serviceName . ' after photo', ENT_QUOTES, 'UTF-8') ?>" style="max-height: 180px; object-fit: cover;">
+                                    </a>
+<?php else: ?>
+                                    <div class="subtle-note">No after photo uploaded yet.</div>
+<?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+<?php endforeach; ?>
+                </div>
+<?php endif; ?>
+
+                <div class="simple-panel mt-3">
+                    <strong class="d-block mb-2">Gas Refill Meter Report</strong>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <span class="subtle-note d-block mb-2">Meter Before</span>
+<?php if (($jobReportPhotoMap['gas_meter']['before']['file_path'] ?? '') !== ''): ?>
+                            <a href="<?= htmlspecialchars((string) $jobReportPhotoMap['gas_meter']['before']['file_path'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                <img class="img-fluid rounded border" src="<?= htmlspecialchars((string) $jobReportPhotoMap['gas_meter']['before']['file_path'], ENT_QUOTES, 'UTF-8') ?>" alt="Gas meter before photo" style="max-height: 180px; object-fit: cover;">
+                            </a>
+<?php else: ?>
+                            <div class="subtle-note">No meter before photo uploaded yet.</div>
+<?php endif; ?>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="subtle-note d-block mb-2">Meter After</span>
+<?php if (($jobReportPhotoMap['gas_meter']['after']['file_path'] ?? '') !== ''): ?>
+                            <a href="<?= htmlspecialchars((string) $jobReportPhotoMap['gas_meter']['after']['file_path'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                <img class="img-fluid rounded border" src="<?= htmlspecialchars((string) $jobReportPhotoMap['gas_meter']['after']['file_path'], ENT_QUOTES, 'UTF-8') ?>" alt="Gas meter after photo" style="max-height: 180px; object-fit: cover;">
+                            </a>
+<?php else: ?>
+                            <div class="subtle-note">No meter after photo uploaded yet.</div>
+<?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <form method="post" class="row g-3">

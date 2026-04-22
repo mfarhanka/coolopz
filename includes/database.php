@@ -181,6 +181,33 @@ function coolopz_ensure_job_services_table(PDO $pdo): void
     }
 }
 
+function coolopz_ensure_job_report_photos_table(PDO $pdo): void
+{
+    static $jobReportPhotosEnsured = false;
+
+    if ($jobReportPhotosEnsured) {
+        return;
+    }
+
+    $jobReportPhotosEnsured = true;
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS job_report_photos (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            job_id INT UNSIGNED NOT NULL,
+            service_name VARCHAR(120) NOT NULL DEFAULT \'\',
+            report_type VARCHAR(40) NOT NULL,
+            file_path VARCHAR(255) NOT NULL,
+            original_name VARCHAR(255) NOT NULL DEFAULT \'\',
+            uploaded_by_name VARCHAR(120) NOT NULL DEFAULT \'\',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_job_report_photo (job_id, service_name, report_type),
+            CONSTRAINT fk_job_report_photos_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
+        )'
+    );
+}
+
 function coolopz_ensure_job_columns(PDO $pdo): void
 {
     static $jobColumnsEnsured = false;
@@ -285,6 +312,7 @@ function coolopz_db(): PDO
     coolopz_ensure_services_table($pdo);
     coolopz_ensure_job_columns($pdo);
     coolopz_ensure_job_services_table($pdo);
+    coolopz_ensure_job_report_photos_table($pdo);
 
     return $pdo;
 }
