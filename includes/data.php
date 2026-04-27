@@ -71,6 +71,11 @@ function coolopz_job_client_update_url(string $token): string
     return coolopz_app_url('job-client-update.php?token=' . urlencode($token));
 }
 
+function coolopz_job_service_report_url(string $token): string
+{
+    return coolopz_app_url('job-service-report.php?token=' . urlencode($token));
+}
+
 function coolopz_job_client_whatsapp_url(array $job): string
 {
     $jobToken = (string) ($job['client_update_token'] ?? '');

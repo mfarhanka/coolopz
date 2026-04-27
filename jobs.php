@@ -410,6 +410,7 @@ include __DIR__ . '/includes/sidebar.php';
                                 <tbody>
 <?php foreach ($jobs as $job): ?>
 <?php $clientUpdateUrl = coolopz_job_client_update_url((string) $job['client_update_token']); ?>
+<?php $serviceReportUrl = coolopz_job_service_report_url((string) $job['client_update_token']); ?>
 <?php $clientWhatsappUrl = coolopz_job_client_whatsapp_url($job); ?>
                                     <tr>
                                         <td><?= htmlspecialchars($job['ticket_number'], ENT_QUOTES, 'UTF-8') ?></td>
@@ -439,6 +440,7 @@ include __DIR__ . '/includes/sidebar.php';
                                             <div class="jobs-actions">
                                                 <a class="btn btn-portal-secondary btn-sm" href="jobs.php?edit=<?= htmlspecialchars((string) $job['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
                                                 <a class="btn btn-outline-primary btn-sm" href="<?= htmlspecialchars($clientUpdateUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Client Form</a>
+                                                <a class="btn btn-outline-dark btn-sm" href="<?= htmlspecialchars($serviceReportUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Service Report</a>
                                                 <button type="button" class="btn btn-outline-secondary btn-sm" data-copy-client-link="<?= htmlspecialchars($clientUpdateUrl, ENT_QUOTES, 'UTF-8') ?>">Copy Link</button>
                                                 <a class="btn btn-outline-success btn-sm" href="<?= htmlspecialchars($clientWhatsappUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a>
                                                 <form method="post" class="m-0" onsubmit="return confirm('Regenerate the client link for this job? The old link will stop working.');">
@@ -612,6 +614,19 @@ include __DIR__ . '/includes/sidebar.php';
                                     <div class="form-text">The unique client link will be generated automatically after you create the job.</div>
 <?php endif; ?>
                                     <input type="hidden" name="client_update_token" value="<?= htmlspecialchars($jobForm['client_update_token'], ENT_QUOTES, 'UTF-8') ?>">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="service_report_link">Service Report Link</label>
+<?php if ($jobForm['client_update_token'] !== ''): ?>
+                                    <div class="input-group">
+                                        <input class="form-control" id="service_report_link" type="text" value="<?= htmlspecialchars(coolopz_job_service_report_url($jobForm['client_update_token']), ENT_QUOTES, 'UTF-8') ?>" readonly>
+                                        <button type="button" class="btn btn-portal-secondary" data-copy-target="service_report_link">Copy</button>
+                                        <a class="btn btn-outline-dark" href="<?= htmlspecialchars(coolopz_job_service_report_url($jobForm['client_update_token']), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Open</a>
+                                    </div>
+                                    <div class="form-text">Use this page when the client only needs to review the service report and payment.</div>
+<?php else: ?>
+                                    <div class="form-text">The service report link will be generated automatically after you create the job.</div>
+<?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="billed_amount">Billed Amount</label>
