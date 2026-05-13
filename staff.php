@@ -68,6 +68,79 @@ function coolopz_staff_attendance_overview(): array
         return $statement->fetchAll();
 }
 
+function coolopz_staff_attendance_presets(): array
+{
+    return [
+        'full_day' => [
+            'label' => 'Full Day (9:00 AM - 5:00 PM)',
+            'clock_in' => '09:00:00',
+            'clock_out' => '17:00:00',
+        ],
+        'half_day_am' => [
+            'label' => 'Half Day Morning (9:00 AM - 1:00 PM)',
+            'clock_in' => '09:00:00',
+            'clock_out' => '13:00:00',
+        ],
+        'half_day_pm' => [
+            'label' => 'Half Day Afternoon (1:00 PM - 5:00 PM)',
+            'clock_in' => '13:00:00',
+            'clock_out' => '17:00:00',
+        ],
+    ];
+}
+
+function coolopz_staff_is_valid_work_date(string $workDate): bool
+{
+    $date = DateTimeImmutable::createFromFormat('Y-m-d', $workDate);
+
+    return $date instanceof DateTimeImmutable && $date->format('Y-m-d') === $workDate;
+}
+
+function coolopz_staff_add_manual_attendance(int $userId, string $workDate, string $shiftType): void
+{
+    $presets = coolopz_staff_attendance_presets();
+
+    if (!isset($presets[$shiftType])) {
+        throw new RuntimeException('Select a valid attendance type.');
+    }
+
+    if (!coolopz_staff_is_valid_work_date($workDate)) {
+        throw new RuntimeException('Select a valid attendance date.');
+    }
+
+    $clockInAt = $workDate . ' ' . $presets[$shiftType]['clock_in'];
+    $clockOutAt = $workDate . ' ' . $presets[$shiftType]['clock_out'];
+    $pdo = coolopz_db();
+    $overlapStatement = $pdo->prepare(
+        'SELECT 1
+         FROM staff_attendance
+         WHERE user_id = :user_id
+           AND clock_in_at < :clock_out_at
+           AND COALESCE(clock_out_at, :max_clock_out_at) > :clock_in_at
+         LIMIT 1'
+    );
+    $overlapStatement->execute([
+        'user_id' => $userId,
+        'clock_in_at' => $clockInAt,
+        'clock_out_at' => $clockOutAt,
+        'max_clock_out_at' => '9999-12-31 23:59:59',
+    ]);
+
+    if ($overlapStatement->fetch() !== false) {
+        throw new RuntimeException('This staff member already has attendance recorded for the selected time range.');
+    }
+
+    $insertStatement = $pdo->prepare(
+        'INSERT INTO staff_attendance (user_id, clock_in_at, clock_out_at)
+         VALUES (:user_id, :clock_in_at, :clock_out_at)'
+    );
+    $insertStatement->execute([
+        'user_id' => $userId,
+        'clock_in_at' => $clockInAt,
+        'clock_out_at' => $clockOutAt,
+    ]);
+}
+
 coolopz_require_role(['Operations Admin']);
 
 $currentUser = coolopz_current_user();
@@ -88,6 +161,7 @@ $successMessage = match ($messageKey) {
     'created' => 'Portal account created successfully.',
     'password-reset' => 'Password reset successfully.',
     'deleted' => 'Portal account removed successfully.',
+    'attendance-added' => 'Manual attendance added successfully.',
     default => '',
 };
 $formData = [
@@ -96,6 +170,12 @@ $formData = [
     'email' => '',
     'role_name' => 'Service Coordinator',
 ];
+$manualAttendanceForm = [
+    'user_id' => 0,
+    'work_date' => date('Y-m-d'),
+    'shift_type' => 'full_day',
+];
+$attendancePresets = coolopz_staff_attendance_presets();
 $resetTargetId = isset($_GET['reset']) ? (int) $_GET['reset'] : 0;
 $resetPasswordForm = [
     'user_id' => $resetTargetId,
@@ -119,6 +199,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             coolopz_delete_staff_user($deleteUserId);
             header('Location: staff.php?message=deleted');
             exit;
+        }
+    } elseif ($action === 'manual_attendance') {
+        $manualAttendanceForm = [
+            'user_id' => (int) ($_POST['attendance_user_id'] ?? 0),
+            'work_date' => trim((string) ($_POST['work_date'] ?? date('Y-m-d'))),
+            'shift_type' => trim((string) ($_POST['shift_type'] ?? 'full_day')),
+        ];
+        $attendanceUser = $manualAttendanceForm['user_id'] > 0 ? coolopz_find_staff_user($manualAttendanceForm['user_id']) : null;
+
+        if ($attendanceUser === null) {
+            $errorMessage = 'Select a valid staff account for the attendance correction.';
+        } else {
+            try {
+                coolopz_staff_add_manual_attendance(
+                    $manualAttendanceForm['user_id'],
+                    $manualAttendanceForm['work_date'],
+                    $manualAttendanceForm['shift_type']
+                );
+                header('Location: staff.php?message=attendance-added');
+                exit;
+            } catch (RuntimeException $exception) {
+                $errorMessage = $exception->getMessage();
+            }
         }
     } elseif ($action === 'reset_password') {
         $resetPasswordForm = [
@@ -188,6 +291,14 @@ include __DIR__ . '/includes/sidebar.php';
                 <span class="section-label">Staff</span>
                 <p class="hero-copy">Create and manage portal accounts for your internal team.</p>
             </section>
+
+<?php if ($errorMessage !== ''): ?>
+            <div class="login-alert" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
+
+<?php if ($successMessage !== ''): ?>
+            <div class="form-success" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
+<?php endif; ?>
 
             <section class="row g-2 g-lg-3">
                 <div class="col-md-4">
@@ -276,18 +387,50 @@ include __DIR__ . '/includes/sidebar.php';
             </section>
 
             <section class="row g-3 mt-0">
-                <div class="col-xl-5">
+                <div class="col-xl-6">
+                    <div class="simple-panel h-100">
+                        <span class="section-label">Attendance correction</span>
+                        <h2 class="panel-title">Add Manual Attendance</h2>
+                        <p class="hero-copy mb-2">Use the default workday presets when staff missed their clock-in or clock-out.</p>
+
+                        <form method="post" class="row g-2 mt-0">
+                            <input type="hidden" name="action" value="manual_attendance">
+
+                            <div class="col-12">
+                                <label class="form-label" for="attendance_user_id">Staff Member</label>
+                                <select class="form-select" id="attendance_user_id" name="attendance_user_id" required>
+                                    <option value="">Select staff member</option>
+<?php foreach ($staffUsers as $user): ?>
+                                    <option value="<?= htmlspecialchars((string) $user['id'], ENT_QUOTES, 'UTF-8') ?>"<?= $manualAttendanceForm['user_id'] === (int) $user['id'] ? ' selected' : '' ?>><?= htmlspecialchars($user['full_name'] . ' (' . $user['username'] . ')', ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="work_date">Work Date</label>
+                                <input class="form-control" id="work_date" name="work_date" type="date" value="<?= htmlspecialchars($manualAttendanceForm['work_date'], ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="shift_type">Attendance Type</label>
+                                <select class="form-select" id="shift_type" name="shift_type" required>
+<?php foreach ($attendancePresets as $presetKey => $preset): ?>
+                                    <option value="<?= htmlspecialchars($presetKey, ENT_QUOTES, 'UTF-8') ?>"<?= $manualAttendanceForm['shift_type'] === $presetKey ? ' selected' : '' ?>><?= htmlspecialchars($preset['label'], ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-text">Full day uses 9:00 AM to 5:00 PM. Half-day presets use either 9:00 AM to 1:00 PM or 1:00 PM to 5:00 PM.</div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-portal-primary w-100">Add Attendance</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-xl-6">
                     <div class="simple-panel h-100">
                         <span class="section-label">Create user</span>
                         <h2 class="panel-title">Add Portal Account</h2>
-
-<?php if ($errorMessage !== ''): ?>
-                        <div class="login-alert mt-2" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
-
-<?php if ($successMessage !== ''): ?>
-                        <div class="form-success mt-2" role="status"><?= htmlspecialchars($successMessage, ENT_QUOTES, 'UTF-8') ?></div>
-<?php endif; ?>
 
                         <form method="post" class="row g-2 mt-0">
                             <div class="col-12">
@@ -322,8 +465,10 @@ include __DIR__ . '/includes/sidebar.php';
                         </form>
                     </div>
                 </div>
+            </section>
 
-                <div class="col-xl-7">
+            <section class="row g-3 mt-0">
+                <div class="col-12">
                     <div class="simple-panel h-100">
                         <div class="panel-head mb-2">
                             <div>
