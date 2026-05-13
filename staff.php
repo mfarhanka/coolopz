@@ -679,53 +679,7 @@ include __DIR__ . '/includes/sidebar.php';
             </section>
 
             <section class="row g-3 mt-0">
-                <div class="col-xl-6">
-                    <div class="simple-panel h-100">
-                        <span class="section-label">Attendance correction</span>
-                        <h2 class="panel-title">Add Manual Attendance</h2>
-                        <p class="hero-copy mb-2">Use the default workday presets when staff missed their clock-in or clock-out.</p>
-
-                        <form method="post" class="row g-2 mt-0">
-                            <input type="hidden" name="action" value="manual_attendance">
-                            <input type="hidden" name="attendance_id" value="<?= htmlspecialchars((string) $manualAttendanceForm['attendance_id'], ENT_QUOTES, 'UTF-8') ?>">
-
-                            <div class="col-12">
-                                <label class="form-label" for="attendance_user_id">Staff Member</label>
-                                <select class="form-select" id="attendance_user_id" name="attendance_user_id" required>
-                                    <option value="">Select staff member</option>
-<?php foreach ($staffUsers as $user): ?>
-                                    <option value="<?= htmlspecialchars((string) $user['id'], ENT_QUOTES, 'UTF-8') ?>"<?= $manualAttendanceForm['user_id'] === (int) $user['id'] ? ' selected' : '' ?>><?= htmlspecialchars($user['full_name'] . ' (' . $user['username'] . ')', ENT_QUOTES, 'UTF-8') ?></option>
-<?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="work_date">Work Date</label>
-                                <input class="form-control" id="work_date" name="work_date" type="date" value="<?= htmlspecialchars($manualAttendanceForm['work_date'], ENT_QUOTES, 'UTF-8') ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="shift_type">Attendance Type</label>
-                                <select class="form-select" id="shift_type" name="shift_type" required>
-<?php foreach ($attendancePresets as $presetKey => $preset): ?>
-                                    <option value="<?= htmlspecialchars($presetKey, ENT_QUOTES, 'UTF-8') ?>"<?= $manualAttendanceForm['shift_type'] === $presetKey ? ' selected' : '' ?>><?= htmlspecialchars($preset['label'], ENT_QUOTES, 'UTF-8') ?></option>
-<?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-text">Full day uses 9:00 AM to 5:00 PM. Half-day presets use either 9:00 AM to 1:00 PM or 1:00 PM to 5:00 PM.</div>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-portal-primary w-100"><?= htmlspecialchars($manualAttendanceForm['attendance_id'] > 0 ? 'Save Attendance Changes' : 'Add Attendance', ENT_QUOTES, 'UTF-8') ?></button>
-                            </div>
-<?php if ($manualAttendanceForm['attendance_id'] > 0): ?>
-                            <div class="col-12">
-                                <a class="btn btn-portal-secondary w-100" href="staff.php">Cancel Edit</a>
-                            </div>
-<?php endif; ?>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="col-xl-6">
+                <div class="col-12">
                     <div class="simple-panel h-100">
                         <span class="section-label">Create user</span>
                         <h2 class="panel-title">Add Portal Account</h2>
@@ -761,72 +715,6 @@ include __DIR__ . '/includes/sidebar.php';
                                 <button type="submit" class="btn btn-portal-primary w-100">Create Account</button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </section>
-
-            <section class="row g-3 mt-0">
-                <div class="col-12">
-                    <div class="simple-panel h-100">
-                        <div class="panel-head mb-2">
-                            <div>
-                                <span class="section-label">Manual entries</span>
-                                <h2 class="panel-title">Recent Manual Attendance</h2>
-                            </div>
-                            <span class="subtle-note"><?= htmlspecialchars((string) count($manualAttendanceEntries), ENT_QUOTES, 'UTF-8') ?> entries</span>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table portal-table align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Staff</th>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Hours</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-<?php if ($manualAttendanceEntries === []): ?>
-                                    <tr>
-                                        <td colspan="5" class="subtle-note">No manual attendance entries yet.</td>
-                                    </tr>
-<?php else: ?>
-<?php foreach ($manualAttendanceEntries as $entry): ?>
-<?php
-    $entryShiftType = !empty($entry['clock_out_at'])
-        ? coolopz_staff_shift_type_from_entry((string) $entry['clock_in_at'], (string) $entry['clock_out_at'])
-        : 'full_day';
-    $entryLabel = $attendancePresets[$entryShiftType]['label'] ?? 'Manual Attendance';
-    $entryMinutes = !empty($entry['clock_out_at'])
-        ? (int) round((strtotime((string) $entry['clock_out_at']) - strtotime((string) $entry['clock_in_at'])) / 60)
-        : 0;
-?>
-                                    <tr>
-                                        <td>
-                                            <strong><?= htmlspecialchars($entry['full_name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
-                                            <span class="subtle-note"><?= htmlspecialchars($entry['username'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        </td>
-                                        <td><?= htmlspecialchars(date('d M Y', strtotime((string) $entry['clock_in_at'])), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars($entryLabel, ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><?= htmlspecialchars(coolopz_staff_format_work_minutes($entryMinutes), ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td>
-                                            <div class="staff-actions">
-                                                <a class="btn btn-portal-secondary btn-sm" href="staff.php?edit_attendance=<?= htmlspecialchars((string) $entry['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
-                                                <form method="post" class="m-0" onsubmit="return confirm('Delete this manual attendance entry?');">
-                                                    <input type="hidden" name="action" value="delete_attendance">
-                                                    <input type="hidden" name="attendance_id" value="<?= htmlspecialchars((string) $entry['id'], ENT_QUOTES, 'UTF-8') ?>">
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-<?php endforeach; ?>
-<?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
             </section>
