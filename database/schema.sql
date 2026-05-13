@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS staff_attendance (
     user_id INT UNSIGNED NOT NULL,
     clock_in_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     clock_out_at DATETIME DEFAULT NULL,
+    source VARCHAR(20) NOT NULL DEFAULT 'clock',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_staff_attendance_user_clock_in (user_id, clock_in_at),

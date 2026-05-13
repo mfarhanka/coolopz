@@ -315,6 +315,7 @@ function coolopz_ensure_staff_attendance_table(PDO $pdo): void
             user_id INT UNSIGNED NOT NULL,
             clock_in_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             clock_out_at DATETIME DEFAULT NULL,
+            source VARCHAR(20) NOT NULL DEFAULT \'clock\',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             KEY idx_staff_attendance_user_clock_in (user_id, clock_in_at),
@@ -322,6 +323,23 @@ function coolopz_ensure_staff_attendance_table(PDO $pdo): void
             CONSTRAINT fk_staff_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )'
     );
+
+    $columnStatement = $pdo->prepare(
+        'SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = :table_name
+           AND COLUMN_NAME = :column_name
+         LIMIT 1'
+    );
+    $columnStatement->execute([
+        'table_name' => 'staff_attendance',
+        'column_name' => 'source',
+    ]);
+
+    if ($columnStatement->fetch() === false) {
+        $pdo->exec("ALTER TABLE staff_attendance ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'clock' AFTER clock_out_at");
+    }
 }
 
 function coolopz_ensure_job_columns(PDO $pdo): void

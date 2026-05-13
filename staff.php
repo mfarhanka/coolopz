@@ -98,6 +98,48 @@ function coolopz_staff_is_valid_work_date(string $workDate): bool
 
 function coolopz_staff_add_manual_attendance(int $userId, string $workDate, string $shiftType): void
 {
+    coolopz_staff_save_manual_attendance(0, $userId, $workDate, $shiftType);
+}
+
+function coolopz_staff_shift_type_from_entry(string $clockInAt, string $clockOutAt): string
+{
+    $timeRange = date('H:i:s', strtotime($clockInAt)) . '|' . date('H:i:s', strtotime($clockOutAt));
+
+    return match ($timeRange) {
+        '09:00:00|17:00:00' => 'full_day',
+        '09:00:00|13:00:00' => 'half_day_am',
+        '13:00:00|17:00:00' => 'half_day_pm',
+        default => 'full_day',
+    };
+}
+
+function coolopz_staff_find_manual_attendance(int $attendanceId): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT staff_attendance.id,
+                staff_attendance.user_id,
+                staff_attendance.clock_in_at,
+                staff_attendance.clock_out_at,
+                staff_attendance.source,
+                users.full_name,
+                users.username
+         FROM staff_attendance
+         INNER JOIN users ON users.id = staff_attendance.user_id
+         WHERE staff_attendance.id = :id
+           AND staff_attendance.source = :source
+         LIMIT 1'
+    );
+    $statement->execute([
+        'id' => $attendanceId,
+        'source' => 'manual',
+    ]);
+    $attendance = $statement->fetch();
+
+    return $attendance === false ? null : $attendance;
+}
+
+function coolopz_staff_save_manual_attendance(int $attendanceId, int $userId, string $workDate, string $shiftType): void
+{
     $presets = coolopz_staff_attendance_presets();
 
     if (!isset($presets[$shiftType])) {
@@ -115,11 +157,13 @@ function coolopz_staff_add_manual_attendance(int $userId, string $workDate, stri
         'SELECT 1
          FROM staff_attendance
          WHERE user_id = :user_id
+                     AND id <> :attendance_id
            AND clock_in_at < :clock_out_at
            AND COALESCE(clock_out_at, :max_clock_out_at) > :clock_in_at
          LIMIT 1'
     );
     $overlapStatement->execute([
+                'attendance_id' => $attendanceId,
         'user_id' => $userId,
         'clock_in_at' => $clockInAt,
         'clock_out_at' => $clockOutAt,
@@ -130,15 +174,81 @@ function coolopz_staff_add_manual_attendance(int $userId, string $workDate, stri
         throw new RuntimeException('This staff member already has attendance recorded for the selected time range.');
     }
 
+    if ($attendanceId > 0) {
+        $attendance = coolopz_staff_find_manual_attendance($attendanceId);
+
+        if ($attendance === null) {
+            throw new RuntimeException('The selected manual attendance record could not be found.');
+        }
+
+        $updateStatement = $pdo->prepare(
+            'UPDATE staff_attendance
+             SET user_id = :user_id,
+                 clock_in_at = :clock_in_at,
+                 clock_out_at = :clock_out_at
+             WHERE id = :id
+               AND source = :source'
+        );
+        $updateStatement->execute([
+            'id' => $attendanceId,
+            'user_id' => $userId,
+            'clock_in_at' => $clockInAt,
+            'clock_out_at' => $clockOutAt,
+            'source' => 'manual',
+        ]);
+
+        return;
+    }
+
     $insertStatement = $pdo->prepare(
-        'INSERT INTO staff_attendance (user_id, clock_in_at, clock_out_at)
-         VALUES (:user_id, :clock_in_at, :clock_out_at)'
+        'INSERT INTO staff_attendance (user_id, clock_in_at, clock_out_at, source)
+         VALUES (:user_id, :clock_in_at, :clock_out_at, :source)'
     );
     $insertStatement->execute([
         'user_id' => $userId,
         'clock_in_at' => $clockInAt,
         'clock_out_at' => $clockOutAt,
+        'source' => 'manual',
     ]);
+}
+
+function coolopz_staff_delete_manual_attendance(int $attendanceId): void
+{
+    $attendance = coolopz_staff_find_manual_attendance($attendanceId);
+
+    if ($attendance === null) {
+        throw new RuntimeException('The selected manual attendance record could not be found.');
+    }
+
+    $statement = coolopz_db()->prepare(
+        'DELETE FROM staff_attendance WHERE id = :id AND source = :source'
+    );
+    $statement->execute([
+        'id' => $attendanceId,
+        'source' => 'manual',
+    ]);
+}
+
+function coolopz_staff_fetch_manual_attendance_entries(int $limit = 20): array
+{
+    $limit = max(1, min($limit, 50));
+    $statement = coolopz_db()->query(
+    "SELECT staff_attendance.id,
+        staff_attendance.user_id,
+        staff_attendance.clock_in_at,
+        staff_attendance.clock_out_at,
+        staff_attendance.source,
+        users.full_name,
+        users.username,
+        users.role_name
+     FROM staff_attendance
+     INNER JOIN users ON users.id = staff_attendance.user_id
+     WHERE staff_attendance.source = 'manual'
+     ORDER BY staff_attendance.clock_in_at DESC, staff_attendance.id DESC
+     LIMIT " . $limit
+    );
+
+    return $statement->fetchAll();
 }
 
 coolopz_require_role(['Operations Admin']);
@@ -162,6 +272,8 @@ $successMessage = match ($messageKey) {
     'password-reset' => 'Password reset successfully.',
     'deleted' => 'Portal account removed successfully.',
     'attendance-added' => 'Manual attendance added successfully.',
+    'attendance-updated' => 'Manual attendance updated successfully.',
+    'attendance-deleted' => 'Manual attendance deleted successfully.',
     default => '',
 };
 $formData = [
@@ -171,11 +283,13 @@ $formData = [
     'role_name' => 'Service Coordinator',
 ];
 $manualAttendanceForm = [
+    'attendance_id' => 0,
     'user_id' => 0,
     'work_date' => date('Y-m-d'),
     'shift_type' => 'full_day',
 ];
 $attendancePresets = coolopz_staff_attendance_presets();
+$editingAttendanceId = isset($_GET['edit_attendance']) ? (int) $_GET['edit_attendance'] : 0;
 $resetTargetId = isset($_GET['reset']) ? (int) $_GET['reset'] : 0;
 $resetPasswordForm = [
     'user_id' => $resetTargetId,
@@ -202,6 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'manual_attendance') {
         $manualAttendanceForm = [
+            'attendance_id' => (int) ($_POST['attendance_id'] ?? 0),
             'user_id' => (int) ($_POST['attendance_user_id'] ?? 0),
             'work_date' => trim((string) ($_POST['work_date'] ?? date('Y-m-d'))),
             'shift_type' => trim((string) ($_POST['shift_type'] ?? 'full_day')),
@@ -212,16 +327,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errorMessage = 'Select a valid staff account for the attendance correction.';
         } else {
             try {
-                coolopz_staff_add_manual_attendance(
+                coolopz_staff_save_manual_attendance(
+                    $manualAttendanceForm['attendance_id'],
                     $manualAttendanceForm['user_id'],
                     $manualAttendanceForm['work_date'],
                     $manualAttendanceForm['shift_type']
                 );
-                header('Location: staff.php?message=attendance-added');
+                $manualAttendanceMessage = $manualAttendanceForm['attendance_id'] > 0 ? 'attendance-updated' : 'attendance-added';
+                header('Location: staff.php?message=' . urlencode($manualAttendanceMessage));
                 exit;
             } catch (RuntimeException $exception) {
                 $errorMessage = $exception->getMessage();
             }
+        }
+    } elseif ($action === 'delete_attendance') {
+        $attendanceId = (int) ($_POST['attendance_id'] ?? 0);
+
+        try {
+            coolopz_staff_delete_manual_attendance($attendanceId);
+            header('Location: staff.php?message=attendance-deleted');
+            exit;
+        } catch (RuntimeException $exception) {
+            $errorMessage = $exception->getMessage();
         }
     } elseif ($action === 'reset_password') {
         $resetPasswordForm = [
@@ -278,9 +405,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if ($editingAttendanceId > 0 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $editingAttendance = coolopz_staff_find_manual_attendance($editingAttendanceId);
+
+    if ($editingAttendance === null || empty($editingAttendance['clock_out_at'])) {
+        $errorMessage = 'The selected manual attendance record could not be found.';
+    } else {
+        $manualAttendanceForm = [
+            'attendance_id' => (int) $editingAttendance['id'],
+            'user_id' => (int) $editingAttendance['user_id'],
+            'work_date' => date('Y-m-d', strtotime((string) $editingAttendance['clock_in_at'])),
+            'shift_type' => coolopz_staff_shift_type_from_entry((string) $editingAttendance['clock_in_at'], (string) $editingAttendance['clock_out_at']),
+        ];
+    }
+}
+
 $staffMetrics = coolopz_fetch_staff_metrics();
 $staffUsers = coolopz_fetch_staff_users();
 $staffAttendanceOverview = coolopz_staff_attendance_overview();
+$manualAttendanceEntries = coolopz_staff_fetch_manual_attendance_entries();
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
@@ -395,6 +538,7 @@ include __DIR__ . '/includes/sidebar.php';
 
                         <form method="post" class="row g-2 mt-0">
                             <input type="hidden" name="action" value="manual_attendance">
+                            <input type="hidden" name="attendance_id" value="<?= htmlspecialchars((string) $manualAttendanceForm['attendance_id'], ENT_QUOTES, 'UTF-8') ?>">
 
                             <div class="col-12">
                                 <label class="form-label" for="attendance_user_id">Staff Member</label>
@@ -421,8 +565,13 @@ include __DIR__ . '/includes/sidebar.php';
                                 <div class="form-text">Full day uses 9:00 AM to 5:00 PM. Half-day presets use either 9:00 AM to 1:00 PM or 1:00 PM to 5:00 PM.</div>
                             </div>
                             <div class="col-12">
-                                <button type="submit" class="btn btn-portal-primary w-100">Add Attendance</button>
+                                <button type="submit" class="btn btn-portal-primary w-100"><?= htmlspecialchars($manualAttendanceForm['attendance_id'] > 0 ? 'Save Attendance Changes' : 'Add Attendance', ENT_QUOTES, 'UTF-8') ?></button>
                             </div>
+<?php if ($manualAttendanceForm['attendance_id'] > 0): ?>
+                            <div class="col-12">
+                                <a class="btn btn-portal-secondary w-100" href="staff.php">Cancel Edit</a>
+                            </div>
+<?php endif; ?>
                         </form>
                     </div>
                 </div>
@@ -463,6 +612,72 @@ include __DIR__ . '/includes/sidebar.php';
                                 <button type="submit" class="btn btn-portal-primary w-100">Create Account</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </section>
+
+            <section class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="simple-panel h-100">
+                        <div class="panel-head mb-2">
+                            <div>
+                                <span class="section-label">Manual entries</span>
+                                <h2 class="panel-title">Recent Manual Attendance</h2>
+                            </div>
+                            <span class="subtle-note"><?= htmlspecialchars((string) count($manualAttendanceEntries), ENT_QUOTES, 'UTF-8') ?> entries</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table portal-table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Staff</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Hours</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+<?php if ($manualAttendanceEntries === []): ?>
+                                    <tr>
+                                        <td colspan="5" class="subtle-note">No manual attendance entries yet.</td>
+                                    </tr>
+<?php else: ?>
+<?php foreach ($manualAttendanceEntries as $entry): ?>
+<?php
+    $entryShiftType = !empty($entry['clock_out_at'])
+        ? coolopz_staff_shift_type_from_entry((string) $entry['clock_in_at'], (string) $entry['clock_out_at'])
+        : 'full_day';
+    $entryLabel = $attendancePresets[$entryShiftType]['label'] ?? 'Manual Attendance';
+    $entryMinutes = !empty($entry['clock_out_at'])
+        ? (int) round((strtotime((string) $entry['clock_out_at']) - strtotime((string) $entry['clock_in_at'])) / 60)
+        : 0;
+?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars($entry['full_name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="subtle-note"><?= htmlspecialchars($entry['username'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td><?= htmlspecialchars(date('d M Y', strtotime((string) $entry['clock_in_at'])), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars($entryLabel, ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars(coolopz_staff_format_work_minutes($entryMinutes), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <div class="staff-actions">
+                                                <a class="btn btn-portal-secondary btn-sm" href="staff.php?edit_attendance=<?= htmlspecialchars((string) $entry['id'], ENT_QUOTES, 'UTF-8') ?>">Edit</a>
+                                                <form method="post" class="m-0" onsubmit="return confirm('Delete this manual attendance entry?');">
+                                                    <input type="hidden" name="action" value="delete_attendance">
+                                                    <input type="hidden" name="attendance_id" value="<?= htmlspecialchars((string) $entry['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+<?php endforeach; ?>
+<?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>

@@ -889,9 +889,12 @@ function coolopz_clock_in_staff(int $userId): void
     }
 
     $statement = coolopz_db()->prepare(
-        'INSERT INTO staff_attendance (user_id) VALUES (:user_id)'
+        'INSERT INTO staff_attendance (user_id, source) VALUES (:user_id, :source)'
     );
-    $statement->execute(['user_id' => $userId]);
+    $statement->execute([
+        'user_id' => $userId,
+        'source' => 'clock',
+    ]);
 }
 
 function coolopz_clock_out_staff(int $userId): void
