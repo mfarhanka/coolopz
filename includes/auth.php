@@ -68,7 +68,7 @@ function coolopz_user_initials(string $name): string
 
 function coolopz_allowed_routes(): array
 {
-    return ['index.php', 'jobs.php', 'customers.php', 'services.php', 'reports.php', 'staff.php', 'clock.php'];
+    return ['index.php', 'jobs.php', 'customers.php', 'services.php', 'reports.php', 'staff.php', 'clock.php', 'staff-attendance.php'];
 }
 
 function coolopz_normalize_redirect(?string $target): string

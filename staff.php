@@ -629,6 +629,7 @@ include __DIR__ . '/includes/sidebar.php';
                                         <th>Current / Last Clock</th>
                                         <th>Today</th>
                                         <th>This Week</th>
+                                        <th>View</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -667,6 +668,7 @@ include __DIR__ . '/includes/sidebar.php';
                                         </td>
                                         <td><?= htmlspecialchars(coolopz_staff_format_work_minutes((int) $attendanceUser['today_minutes']), ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars(coolopz_staff_format_work_minutes((int) $attendanceUser['week_minutes']), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><a class="btn btn-portal-secondary btn-sm" href="staff-attendance.php?user_id=<?= htmlspecialchars((string) $attendanceUser['id'], ENT_QUOTES, 'UTF-8') ?>">View List</a></td>
                                     </tr>
 <?php endforeach; ?>
                                 </tbody>

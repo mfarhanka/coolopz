@@ -968,6 +968,28 @@ function coolopz_fetch_staff_clock_history(int $userId, int $limit = 10): array
     return $statement->fetchAll();
 }
 
+function coolopz_fetch_staff_attendance_entries(int $userId, int $limit = 100): array
+{
+    $limit = max(1, min($limit, 365));
+    $statement = coolopz_db()->prepare(
+        'SELECT id,
+                user_id,
+                clock_in_at,
+                clock_out_at,
+                source,
+                TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP)) AS worked_minutes,
+                created_at,
+                updated_at
+         FROM staff_attendance
+         WHERE user_id = :user_id
+         ORDER BY clock_in_at DESC, id DESC
+         LIMIT ' . $limit
+    );
+    $statement->execute(['user_id' => $userId]);
+
+    return $statement->fetchAll();
+}
+
 function coolopz_fetch_staff_attendance_overview(): array
 {
         $statement = coolopz_db()->query(
