@@ -342,6 +342,39 @@ function coolopz_ensure_staff_attendance_table(PDO $pdo): void
     }
 }
 
+function coolopz_ensure_staff_attendance_audit_table(PDO $pdo): void
+{
+    static $staffAttendanceAuditEnsured = false;
+
+    if ($staffAttendanceAuditEnsured) {
+        return;
+    }
+
+    $staffAttendanceAuditEnsured = true;
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS staff_attendance_audit (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            attendance_id INT UNSIGNED DEFAULT NULL,
+            action_name VARCHAR(20) NOT NULL,
+            changed_by_user_id INT UNSIGNED DEFAULT NULL,
+            affected_user_id INT UNSIGNED NOT NULL,
+            old_clock_in_at DATETIME DEFAULT NULL,
+            old_clock_out_at DATETIME DEFAULT NULL,
+            new_clock_in_at DATETIME DEFAULT NULL,
+            new_clock_out_at DATETIME DEFAULT NULL,
+            old_source VARCHAR(20) DEFAULT NULL,
+            new_source VARCHAR(20) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_staff_attendance_audit_attendance (attendance_id),
+            KEY idx_staff_attendance_audit_changed_by (changed_by_user_id),
+            KEY idx_staff_attendance_audit_affected_user (affected_user_id),
+            CONSTRAINT fk_staff_attendance_audit_changed_by_user FOREIGN KEY (changed_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+            CONSTRAINT fk_staff_attendance_audit_affected_user FOREIGN KEY (affected_user_id) REFERENCES users(id) ON DELETE CASCADE
+        )'
+    );
+}
+
 function coolopz_ensure_job_columns(PDO $pdo): void
 {
     static $jobColumnsEnsured = false;
@@ -449,6 +482,7 @@ function coolopz_db(): PDO
     coolopz_ensure_job_services_table($pdo);
     coolopz_ensure_job_report_photos_table($pdo);
     coolopz_ensure_staff_attendance_table($pdo);
+    coolopz_ensure_staff_attendance_audit_table($pdo);
 
     return $pdo;
 }

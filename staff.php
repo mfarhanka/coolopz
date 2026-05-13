@@ -24,8 +24,10 @@ function coolopz_staff_attendance_overview(): array
                                 users.email,
                                 users.role_name,
                                 open_shift.clock_in_at AS active_clock_in_at,
+                open_shift.source AS active_source,
                                 last_shift.clock_in_at AS last_clock_in_at,
                                 last_shift.clock_out_at AS last_clock_out_at,
+                last_shift.source AS last_source,
                                 COALESCE(today_stats.today_minutes, 0) AS today_minutes,
                                 COALESCE(week_stats.week_minutes, 0) AS week_minutes
                  FROM users
@@ -68,6 +70,24 @@ function coolopz_staff_attendance_overview(): array
         return $statement->fetchAll();
 }
 
+function coolopz_staff_source_badge_class(string $source): string
+{
+    return match ($source) {
+        'manual' => 'status-urgent',
+        'clock' => 'status-progress',
+        default => 'status-queued',
+    };
+}
+
+function coolopz_staff_source_label(string $source): string
+{
+    return match ($source) {
+        'manual' => 'Manual',
+        'clock' => 'Clock',
+        default => 'Unknown',
+    };
+}
+
 function coolopz_staff_attendance_presets(): array
 {
     return [
@@ -98,7 +118,7 @@ function coolopz_staff_is_valid_work_date(string $workDate): bool
 
 function coolopz_staff_add_manual_attendance(int $userId, string $workDate, string $shiftType): void
 {
-    coolopz_staff_save_manual_attendance(0, $userId, $workDate, $shiftType);
+    coolopz_staff_save_manual_attendance(0, $userId, $workDate, $shiftType, null);
 }
 
 function coolopz_staff_shift_type_from_entry(string $clockInAt, string $clockOutAt): string
@@ -138,7 +158,58 @@ function coolopz_staff_find_manual_attendance(int $attendanceId): ?array
     return $attendance === false ? null : $attendance;
 }
 
-function coolopz_staff_save_manual_attendance(int $attendanceId, int $userId, string $workDate, string $shiftType): void
+function coolopz_staff_log_attendance_audit(
+    ?int $attendanceId,
+    string $actionName,
+    ?int $changedByUserId,
+    int $affectedUserId,
+    ?string $oldClockInAt,
+    ?string $oldClockOutAt,
+    ?string $newClockInAt,
+    ?string $newClockOutAt,
+    ?string $oldSource,
+    ?string $newSource
+): void {
+    $statement = coolopz_db()->prepare(
+        'INSERT INTO staff_attendance_audit (
+            attendance_id,
+            action_name,
+            changed_by_user_id,
+            affected_user_id,
+            old_clock_in_at,
+            old_clock_out_at,
+            new_clock_in_at,
+            new_clock_out_at,
+            old_source,
+            new_source
+        ) VALUES (
+            :attendance_id,
+            :action_name,
+            :changed_by_user_id,
+            :affected_user_id,
+            :old_clock_in_at,
+            :old_clock_out_at,
+            :new_clock_in_at,
+            :new_clock_out_at,
+            :old_source,
+            :new_source
+        )'
+    );
+    $statement->execute([
+        'attendance_id' => $attendanceId,
+        'action_name' => $actionName,
+        'changed_by_user_id' => $changedByUserId,
+        'affected_user_id' => $affectedUserId,
+        'old_clock_in_at' => $oldClockInAt,
+        'old_clock_out_at' => $oldClockOutAt,
+        'new_clock_in_at' => $newClockInAt,
+        'new_clock_out_at' => $newClockOutAt,
+        'old_source' => $oldSource,
+        'new_source' => $newSource,
+    ]);
+}
+
+function coolopz_staff_save_manual_attendance(int $attendanceId, int $userId, string $workDate, string $shiftType, ?int $changedByUserId): void
 {
     $presets = coolopz_staff_attendance_presets();
 
@@ -197,6 +268,19 @@ function coolopz_staff_save_manual_attendance(int $attendanceId, int $userId, st
             'source' => 'manual',
         ]);
 
+        coolopz_staff_log_attendance_audit(
+            $attendanceId,
+            'update',
+            $changedByUserId,
+            $userId,
+            (string) $attendance['clock_in_at'],
+            (string) $attendance['clock_out_at'],
+            $clockInAt,
+            $clockOutAt,
+            (string) $attendance['source'],
+            'manual'
+        );
+
         return;
     }
 
@@ -210,9 +294,22 @@ function coolopz_staff_save_manual_attendance(int $attendanceId, int $userId, st
         'clock_out_at' => $clockOutAt,
         'source' => 'manual',
     ]);
+
+    coolopz_staff_log_attendance_audit(
+        (int) coolopz_db()->lastInsertId(),
+        'create',
+        $changedByUserId,
+        $userId,
+        null,
+        null,
+        $clockInAt,
+        $clockOutAt,
+        null,
+        'manual'
+    );
 }
 
-function coolopz_staff_delete_manual_attendance(int $attendanceId): void
+function coolopz_staff_delete_manual_attendance(int $attendanceId, ?int $changedByUserId): void
 {
     $attendance = coolopz_staff_find_manual_attendance($attendanceId);
 
@@ -227,6 +324,19 @@ function coolopz_staff_delete_manual_attendance(int $attendanceId): void
         'id' => $attendanceId,
         'source' => 'manual',
     ]);
+
+    coolopz_staff_log_attendance_audit(
+        $attendanceId,
+        'delete',
+        $changedByUserId,
+        (int) $attendance['user_id'],
+        (string) $attendance['clock_in_at'],
+        (string) $attendance['clock_out_at'],
+        null,
+        null,
+        (string) $attendance['source'],
+        null
+    );
 }
 
 function coolopz_staff_fetch_manual_attendance_entries(int $limit = 20): array
@@ -251,6 +361,34 @@ function coolopz_staff_fetch_manual_attendance_entries(int $limit = 20): array
     return $statement->fetchAll();
 }
 
+function coolopz_staff_fetch_attendance_audit_entries(int $limit = 20): array
+{
+    $limit = max(1, min($limit, 50));
+    $statement = coolopz_db()->query(
+        "SELECT staff_attendance_audit.id,
+                staff_attendance_audit.attendance_id,
+                staff_attendance_audit.action_name,
+                staff_attendance_audit.affected_user_id,
+                staff_attendance_audit.old_clock_in_at,
+                staff_attendance_audit.old_clock_out_at,
+                staff_attendance_audit.new_clock_in_at,
+                staff_attendance_audit.new_clock_out_at,
+                staff_attendance_audit.old_source,
+                staff_attendance_audit.new_source,
+                staff_attendance_audit.created_at,
+                affected_users.full_name AS affected_full_name,
+                affected_users.username AS affected_username,
+                changed_users.full_name AS changed_by_full_name
+         FROM staff_attendance_audit
+         INNER JOIN users AS affected_users ON affected_users.id = staff_attendance_audit.affected_user_id
+         LEFT JOIN users AS changed_users ON changed_users.id = staff_attendance_audit.changed_by_user_id
+         ORDER BY staff_attendance_audit.created_at DESC, staff_attendance_audit.id DESC
+         LIMIT " . $limit
+    );
+
+    return $statement->fetchAll();
+}
+
 coolopz_require_role(['Operations Admin']);
 
 $currentUser = coolopz_current_user();
@@ -259,6 +397,7 @@ $activePage = 'staff';
 $currentUserName = $currentUser['name'] ?? 'Admin User';
 $currentUserRole = $currentUser['role'] ?? 'Operations Admin';
 $userInitials = coolopz_user_initials($currentUserName);
+$currentUserId = isset($currentUser['id']) ? (int) $currentUser['id'] : null;
 
 $errorMessage = '';
 $allowedRoles = [
@@ -331,7 +470,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $manualAttendanceForm['attendance_id'],
                     $manualAttendanceForm['user_id'],
                     $manualAttendanceForm['work_date'],
-                    $manualAttendanceForm['shift_type']
+                    $manualAttendanceForm['shift_type'],
+                    $currentUserId
                 );
                 $manualAttendanceMessage = $manualAttendanceForm['attendance_id'] > 0 ? 'attendance-updated' : 'attendance-added';
                 header('Location: staff.php?message=' . urlencode($manualAttendanceMessage));
@@ -344,7 +484,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $attendanceId = (int) ($_POST['attendance_id'] ?? 0);
 
         try {
-            coolopz_staff_delete_manual_attendance($attendanceId);
+            coolopz_staff_delete_manual_attendance($attendanceId, $currentUserId);
             header('Location: staff.php?message=attendance-deleted');
             exit;
         } catch (RuntimeException $exception) {
@@ -424,6 +564,7 @@ $staffMetrics = coolopz_fetch_staff_metrics();
 $staffUsers = coolopz_fetch_staff_users();
 $staffAttendanceOverview = coolopz_staff_attendance_overview();
 $manualAttendanceEntries = coolopz_staff_fetch_manual_attendance_entries();
+$attendanceAuditEntries = coolopz_staff_fetch_attendance_audit_entries();
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
@@ -497,6 +638,9 @@ include __DIR__ . '/includes/sidebar.php';
     $lastClockMoment = $isClockedIn
         ? (string) $attendanceUser['active_clock_in_at']
         : (string) ($attendanceUser['last_clock_out_at'] ?: $attendanceUser['last_clock_in_at']);
+    $attendanceSource = $isClockedIn
+        ? (string) ($attendanceUser['active_source'] ?? '')
+        : (string) ($attendanceUser['last_source'] ?? '');
     $lastClockLabel = $isClockedIn
         ? 'Clocked in'
         : (!empty($attendanceUser['last_clock_out_at']) ? 'Last clock-out' : (!empty($attendanceUser['last_clock_in_at']) ? 'Last clock-in' : 'No records'));
@@ -514,6 +658,9 @@ include __DIR__ . '/includes/sidebar.php';
 <?php if ($lastClockMoment !== ''): ?>
                                             <strong><?= htmlspecialchars(date('d M Y h:i A', strtotime($lastClockMoment)), ENT_QUOTES, 'UTF-8') ?></strong><br>
                                             <span class="subtle-note"><?= htmlspecialchars($lastClockLabel, ENT_QUOTES, 'UTF-8') ?></span>
+<?php if ($attendanceSource !== ''): ?>
+                                            <div class="mt-1"><span class="status-badge <?= coolopz_staff_source_badge_class($attendanceSource) ?>"><?= htmlspecialchars(coolopz_staff_source_label($attendanceSource), ENT_QUOTES, 'UTF-8') ?></span></div>
+<?php endif; ?>
 <?php else: ?>
                                             <span class="subtle-note">No attendance records</span>
 <?php endif; ?>
@@ -672,6 +819,63 @@ include __DIR__ . '/includes/sidebar.php';
                                                 </form>
                                             </div>
                                         </td>
+                                    </tr>
+<?php endforeach; ?>
+<?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="simple-panel h-100">
+                        <div class="panel-head mb-2">
+                            <div>
+                                <span class="section-label">Audit trail</span>
+                                <h2 class="panel-title">Attendance Change Log</h2>
+                            </div>
+                            <span class="subtle-note"><?= htmlspecialchars((string) count($attendanceAuditEntries), ENT_QUOTES, 'UTF-8') ?> recent actions</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table portal-table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>When</th>
+                                        <th>Action</th>
+                                        <th>Staff</th>
+                                        <th>Changed By</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+<?php if ($attendanceAuditEntries === []): ?>
+                                    <tr>
+                                        <td colspan="5" class="subtle-note">No audit entries yet.</td>
+                                    </tr>
+<?php else: ?>
+<?php foreach ($attendanceAuditEntries as $auditEntry): ?>
+<?php
+    $detailParts = [];
+    if (!empty($auditEntry['new_clock_in_at']) && !empty($auditEntry['new_clock_out_at'])) {
+        $detailParts[] = 'New: ' . date('d M Y h:i A', strtotime((string) $auditEntry['new_clock_in_at'])) . ' to ' . date('h:i A', strtotime((string) $auditEntry['new_clock_out_at']));
+    }
+    if (!empty($auditEntry['old_clock_in_at']) && !empty($auditEntry['old_clock_out_at'])) {
+        $detailParts[] = 'Old: ' . date('d M Y h:i A', strtotime((string) $auditEntry['old_clock_in_at'])) . ' to ' . date('h:i A', strtotime((string) $auditEntry['old_clock_out_at']));
+    }
+?>
+                                    <tr>
+                                        <td><?= htmlspecialchars(date('d M Y h:i A', strtotime((string) $auditEntry['created_at'])), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><span class="status-badge <?= coolopz_status_badge_class((string) ($auditEntry['action_name'] === 'delete' ? 'Priority' : ($auditEntry['action_name'] === 'update' ? 'In Progress' : 'Completed')) ) ?>"><?= htmlspecialchars(ucfirst((string) $auditEntry['action_name']), ENT_QUOTES, 'UTF-8') ?></span></td>
+                                        <td>
+                                            <strong><?= htmlspecialchars($auditEntry['affected_full_name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="subtle-note"><?= htmlspecialchars($auditEntry['affected_username'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td><?= htmlspecialchars((string) ($auditEntry['changed_by_full_name'] ?: 'System'), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars(implode(' | ', $detailParts), ENT_QUOTES, 'UTF-8') ?></td>
                                     </tr>
 <?php endforeach; ?>
 <?php endif; ?>

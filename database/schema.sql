@@ -25,6 +25,26 @@ CREATE TABLE IF NOT EXISTS staff_attendance (
     CONSTRAINT fk_staff_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS staff_attendance_audit (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    attendance_id INT UNSIGNED DEFAULT NULL,
+    action_name VARCHAR(20) NOT NULL,
+    changed_by_user_id INT UNSIGNED DEFAULT NULL,
+    affected_user_id INT UNSIGNED NOT NULL,
+    old_clock_in_at DATETIME DEFAULT NULL,
+    old_clock_out_at DATETIME DEFAULT NULL,
+    new_clock_in_at DATETIME DEFAULT NULL,
+    new_clock_out_at DATETIME DEFAULT NULL,
+    old_source VARCHAR(20) DEFAULT NULL,
+    new_source VARCHAR(20) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_staff_attendance_audit_attendance (attendance_id),
+    KEY idx_staff_attendance_audit_changed_by (changed_by_user_id),
+    KEY idx_staff_attendance_audit_affected_user (affected_user_id),
+    CONSTRAINT fk_staff_attendance_audit_changed_by_user FOREIGN KEY (changed_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_staff_attendance_audit_affected_user FOREIGN KEY (affected_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(190) NOT NULL,
