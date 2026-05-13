@@ -35,21 +35,31 @@ function coolopz_staff_attendance_shift_type_page(string $clockInAt, string $clo
     };
 }
 
-function coolopz_staff_attendance_find_manual_page(int $attendanceId): ?array
+function coolopz_staff_attendance_find_page(int $attendanceId): ?array
 {
     $statement = coolopz_db()->prepare(
         'SELECT id, user_id, clock_in_at, clock_out_at, source
          FROM staff_attendance
-         WHERE id = :id AND source = :source
+         WHERE id = :id
          LIMIT 1'
     );
     $statement->execute([
         'id' => $attendanceId,
-        'source' => 'manual',
     ]);
     $attendance = $statement->fetch();
 
     return $attendance === false ? null : $attendance;
+}
+
+function coolopz_staff_attendance_find_manual_page(int $attendanceId): ?array
+{
+    $attendance = coolopz_staff_attendance_find_page($attendanceId);
+
+    if ($attendance === null || (string) ($attendance['source'] ?? '') !== 'manual') {
+        return null;
+    }
+
+    return $attendance;
 }
 
 function coolopz_staff_attendance_log_audit_page(
@@ -206,18 +216,17 @@ function coolopz_staff_attendance_save_manual_page(int $attendanceId, int $userI
 
 function coolopz_staff_attendance_delete_manual_page(int $attendanceId, ?int $changedByUserId): void
 {
-    $attendance = coolopz_staff_attendance_find_manual_page($attendanceId);
+    $attendance = coolopz_staff_attendance_find_page($attendanceId);
 
     if ($attendance === null) {
-        throw new RuntimeException('The selected manual attendance record could not be found.');
+        throw new RuntimeException('The selected attendance record could not be found.');
     }
 
     $statement = coolopz_db()->prepare(
-        'DELETE FROM staff_attendance WHERE id = :id AND source = :source'
+        'DELETE FROM staff_attendance WHERE id = :id'
     );
     $statement->execute([
         'id' => $attendanceId,
-        'source' => 'manual',
     ]);
 
     coolopz_staff_attendance_log_audit_page(
@@ -341,9 +350,9 @@ if ($selectedStaffUser !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $attendanceId = (int) ($_POST['attendance_id'] ?? 0);
 
         try {
-            $attendance = coolopz_staff_attendance_find_manual_page($attendanceId);
+            $attendance = coolopz_staff_attendance_find_page($attendanceId);
             if ($attendance === null || (int) $attendance['user_id'] !== (int) $selectedStaffUser['id']) {
-                throw new RuntimeException('The selected manual attendance record could not be found.');
+                throw new RuntimeException('The selected attendance record could not be found.');
             }
 
             coolopz_staff_attendance_delete_manual_page($attendanceId, $currentUserId);
@@ -468,6 +477,12 @@ include __DIR__ . '/includes/sidebar.php';
                                                     <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                                                 </form>
                                             </div>
+<?php elseif (($entry['source'] ?? '') === 'clock'): ?>
+                                            <form method="post" class="m-0" onsubmit="return confirm('Delete this clock attendance record?');">
+                                                <input type="hidden" name="action" value="delete_attendance">
+                                                <input type="hidden" name="attendance_id" value="<?= htmlspecialchars((string) $entry['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                            </form>
 <?php else: ?>
                                             <span class="subtle-note">-</span>
 <?php endif; ?>
