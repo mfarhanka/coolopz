@@ -12,11 +12,16 @@ $currentUserRole = $currentUser['role'] ?? 'Operations Admin';
 $userInitials = coolopz_user_initials($currentUserName);
 
 $errorMessage = '';
+$allowedRoles = [
+    'Service Coordinator',
+    'Technician Lead',
+    'Operations Admin',
+];
 $messageKey = (string) ($_GET['message'] ?? '');
 $successMessage = match ($messageKey) {
-    'created' => 'Staff account created successfully.',
+    'created' => 'Portal account created successfully.',
     'password-reset' => 'Password reset successfully.',
-    'deleted' => 'Staff account removed successfully.',
+    'deleted' => 'Portal account removed successfully.',
     default => '',
 };
 $formData = [
@@ -79,6 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errorMessage = 'Name, email, and password are required.';
         } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
             $errorMessage = 'Enter a valid email address.';
+        } elseif (!in_array($formData['role_name'], $allowedRoles, true)) {
+            $errorMessage = 'Select a valid role for the new account.';
         } elseif (strlen($password) < 8) {
             $errorMessage = 'Password must be at least 8 characters.';
         } else {
@@ -136,7 +143,7 @@ include __DIR__ . '/includes/sidebar.php';
                 <div class="col-xl-5">
                     <div class="simple-panel h-100">
                         <span class="section-label">Create user</span>
-                        <h2 class="panel-title">Add Staff Account</h2>
+                        <h2 class="panel-title">Add Portal Account</h2>
 
 <?php if ($errorMessage !== ''): ?>
                         <div class="login-alert mt-2" role="alert"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
@@ -158,10 +165,11 @@ include __DIR__ . '/includes/sidebar.php';
                             <div class="col-12">
                                 <label class="form-label" for="role_name">Role</label>
                                 <select class="form-select" id="role_name" name="role_name">
-                                    <option value="Service Coordinator"<?= $formData['role_name'] === 'Service Coordinator' ? ' selected' : '' ?>>Service Coordinator</option>
-                                    <option value="Technician Lead"<?= $formData['role_name'] === 'Technician Lead' ? ' selected' : '' ?>>Technician Lead</option>
-                                    <option value="Operations Admin"<?= $formData['role_name'] === 'Operations Admin' ? ' selected' : '' ?>>Operations Admin</option>
+<?php foreach ($allowedRoles as $roleName): ?>
+                                    <option value="<?= htmlspecialchars($roleName, ENT_QUOTES, 'UTF-8') ?>"<?= $formData['role_name'] === $roleName ? ' selected' : '' ?>><?= htmlspecialchars($roleName, ENT_QUOTES, 'UTF-8') ?></option>
+<?php endforeach; ?>
                                 </select>
+                                <div class="form-text">Choose Operations Admin to grant full administrative access.</div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label" for="password">Password</label>
