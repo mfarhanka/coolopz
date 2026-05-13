@@ -2,19 +2,6 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/data.php';
 
-function coolopz_format_work_minutes(int $minutes): string
-{
-    $minutes = max(0, $minutes);
-    $hours = intdiv($minutes, 60);
-    $remainingMinutes = $minutes % 60;
-
-    if ($hours > 0) {
-        return sprintf('%dh %02dm', $hours, $remainingMinutes);
-    }
-
-    return sprintf('%dm', $remainingMinutes);
-}
-
 coolopz_require_login();
 
 $currentUser = coolopz_current_user();

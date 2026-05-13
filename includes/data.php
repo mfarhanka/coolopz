@@ -369,6 +369,19 @@ function coolopz_status_badge_class(string $status): string
     };
 }
 
+function coolopz_format_work_minutes(int $minutes): string
+{
+    $minutes = max(0, $minutes);
+    $hours = intdiv($minutes, 60);
+    $remainingMinutes = $minutes % 60;
+
+    if ($hours > 0) {
+        return sprintf('%dh %02dm', $hours, $remainingMinutes);
+    }
+
+    return sprintf('%dm', $remainingMinutes);
+}
+
 function coolopz_fetch_dashboard_metrics(): array
 {
     $pdo = coolopz_db();
@@ -950,6 +963,59 @@ function coolopz_fetch_staff_clock_history(int $userId, int $limit = 10): array
     $statement->execute(['user_id' => $userId]);
 
     return $statement->fetchAll();
+}
+
+function coolopz_fetch_staff_attendance_overview(): array
+{
+        $statement = coolopz_db()->query(
+                "SELECT users.id,
+                                users.username,
+                                users.full_name,
+                                users.email,
+                                users.role_name,
+                                open_shift.clock_in_at AS active_clock_in_at,
+                                last_shift.clock_in_at AS last_clock_in_at,
+                                last_shift.clock_out_at AS last_clock_out_at,
+                                COALESCE(today_stats.today_minutes, 0) AS today_minutes,
+                                COALESCE(week_stats.week_minutes, 0) AS week_minutes
+                 FROM users
+                 LEFT JOIN staff_attendance AS open_shift
+                     ON open_shift.id = (
+                                SELECT attendance_open.id
+                                FROM staff_attendance AS attendance_open
+                                WHERE attendance_open.user_id = users.id
+                                    AND attendance_open.clock_out_at IS NULL
+                                ORDER BY attendance_open.clock_in_at DESC, attendance_open.id DESC
+                                LIMIT 1
+                     )
+                 LEFT JOIN staff_attendance AS last_shift
+                     ON last_shift.id = (
+                                SELECT attendance_last.id
+                                FROM staff_attendance AS attendance_last
+                                WHERE attendance_last.user_id = users.id
+                                ORDER BY attendance_last.clock_in_at DESC, attendance_last.id DESC
+                                LIMIT 1
+                     )
+                 LEFT JOIN (
+                         SELECT user_id,
+                                        SUM(TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP))) AS today_minutes
+                         FROM staff_attendance
+                         WHERE DATE(clock_in_at) = CURDATE()
+                         GROUP BY user_id
+                 ) AS today_stats
+                     ON today_stats.user_id = users.id
+                 LEFT JOIN (
+                         SELECT user_id,
+                                        SUM(TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP))) AS week_minutes
+                         FROM staff_attendance
+                         WHERE YEARWEEK(clock_in_at, 1) = YEARWEEK(CURDATE(), 1)
+                         GROUP BY user_id
+                 ) AS week_stats
+                     ON week_stats.user_id = users.id
+                 ORDER BY users.full_name ASC, users.id ASC"
+        );
+
+        return $statement->fetchAll();
 }
 
 function coolopz_fetch_customer_options(): array

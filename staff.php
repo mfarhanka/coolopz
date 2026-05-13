@@ -2,6 +2,72 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/data.php';
 
+function coolopz_staff_format_work_minutes(int $minutes): string
+{
+        $minutes = max(0, $minutes);
+        $hours = intdiv($minutes, 60);
+        $remainingMinutes = $minutes % 60;
+
+        if ($hours > 0) {
+                return sprintf('%dh %02dm', $hours, $remainingMinutes);
+        }
+
+        return sprintf('%dm', $remainingMinutes);
+}
+
+function coolopz_staff_attendance_overview(): array
+{
+        $statement = coolopz_db()->query(
+                "SELECT users.id,
+                                users.username,
+                                users.full_name,
+                                users.email,
+                                users.role_name,
+                                open_shift.clock_in_at AS active_clock_in_at,
+                                last_shift.clock_in_at AS last_clock_in_at,
+                                last_shift.clock_out_at AS last_clock_out_at,
+                                COALESCE(today_stats.today_minutes, 0) AS today_minutes,
+                                COALESCE(week_stats.week_minutes, 0) AS week_minutes
+                 FROM users
+                 LEFT JOIN staff_attendance AS open_shift
+                     ON open_shift.id = (
+                                SELECT attendance_open.id
+                                FROM staff_attendance AS attendance_open
+                                WHERE attendance_open.user_id = users.id
+                                    AND attendance_open.clock_out_at IS NULL
+                                ORDER BY attendance_open.clock_in_at DESC, attendance_open.id DESC
+                                LIMIT 1
+                     )
+                 LEFT JOIN staff_attendance AS last_shift
+                     ON last_shift.id = (
+                                SELECT attendance_last.id
+                                FROM staff_attendance AS attendance_last
+                                WHERE attendance_last.user_id = users.id
+                                ORDER BY attendance_last.clock_in_at DESC, attendance_last.id DESC
+                                LIMIT 1
+                     )
+                 LEFT JOIN (
+                         SELECT user_id,
+                                        SUM(TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP))) AS today_minutes
+                         FROM staff_attendance
+                         WHERE DATE(clock_in_at) = CURDATE()
+                         GROUP BY user_id
+                 ) AS today_stats
+                     ON today_stats.user_id = users.id
+                 LEFT JOIN (
+                         SELECT user_id,
+                                        SUM(TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP))) AS week_minutes
+                         FROM staff_attendance
+                         WHERE YEARWEEK(clock_in_at, 1) = YEARWEEK(CURDATE(), 1)
+                         GROUP BY user_id
+                 ) AS week_stats
+                     ON week_stats.user_id = users.id
+                 ORDER BY users.full_name ASC, users.id ASC"
+        );
+
+        return $statement->fetchAll();
+}
+
 coolopz_require_role(['Operations Admin']);
 
 $currentUser = coolopz_current_user();
@@ -111,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $staffMetrics = coolopz_fetch_staff_metrics();
 $staffUsers = coolopz_fetch_staff_users();
+$staffAttendanceOverview = coolopz_staff_attendance_overview();
 
 include __DIR__ . '/includes/head.php';
 include __DIR__ . '/includes/sidebar.php';
@@ -142,6 +209,68 @@ include __DIR__ . '/includes/sidebar.php';
                         <span class="stat-label">Staff Accounts</span>
                         <strong class="stat-value"><?= htmlspecialchars((string) $staffMetrics['staff'], ENT_QUOTES, 'UTF-8') ?></strong>
                         <p>Operational users for daily portal work.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="simple-panel">
+                        <div class="panel-head mb-2">
+                            <div>
+                                <span class="section-label">Attendance</span>
+                                <h2 class="panel-title">Staff Attendance Overview</h2>
+                            </div>
+                            <span class="subtle-note"><?= htmlspecialchars((string) count($staffAttendanceOverview), ENT_QUOTES, 'UTF-8') ?> users tracked</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table portal-table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Current / Last Clock</th>
+                                        <th>Today</th>
+                                        <th>This Week</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+<?php foreach ($staffAttendanceOverview as $attendanceUser): ?>
+<?php
+    $isClockedIn = !empty($attendanceUser['active_clock_in_at']);
+    $lastClockMoment = $isClockedIn
+        ? (string) $attendanceUser['active_clock_in_at']
+        : (string) ($attendanceUser['last_clock_out_at'] ?: $attendanceUser['last_clock_in_at']);
+    $lastClockLabel = $isClockedIn
+        ? 'Clocked in'
+        : (!empty($attendanceUser['last_clock_out_at']) ? 'Last clock-out' : (!empty($attendanceUser['last_clock_in_at']) ? 'Last clock-in' : 'No records'));
+?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars($attendanceUser['full_name'], ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="subtle-note"><?= htmlspecialchars($attendanceUser['username'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td><?= htmlspecialchars($attendanceUser['role_name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td>
+                                            <span class="status-badge <?= $isClockedIn ? 'status-progress' : 'status-queued' ?>"><?= htmlspecialchars($isClockedIn ? 'Clocked In' : 'Clocked Out', ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td>
+<?php if ($lastClockMoment !== ''): ?>
+                                            <strong><?= htmlspecialchars(date('d M Y h:i A', strtotime($lastClockMoment)), ENT_QUOTES, 'UTF-8') ?></strong><br>
+                                            <span class="subtle-note"><?= htmlspecialchars($lastClockLabel, ENT_QUOTES, 'UTF-8') ?></span>
+<?php else: ?>
+                                            <span class="subtle-note">No attendance records</span>
+<?php endif; ?>
+                                        </td>
+                                        <td><?= htmlspecialchars(coolopz_staff_format_work_minutes((int) $attendanceUser['today_minutes']), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><?= htmlspecialchars(coolopz_staff_format_work_minutes((int) $attendanceUser['week_minutes']), ENT_QUOTES, 'UTF-8') ?></td>
+                                    </tr>
+<?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
