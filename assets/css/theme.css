@@ -428,6 +428,28 @@ body {
     border-top: 1px solid var(--portal-border);
 }
 
+.clock-action-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.clock-status-stack {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.clock-time-mark {
+    font-size: 1.75rem;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--portal-blue-dark);
+}
+
+.clock-history-note {
+    color: #1c8b5f;
+    font-weight: 600;
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;

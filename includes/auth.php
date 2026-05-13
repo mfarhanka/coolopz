@@ -11,7 +11,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 function coolopz_find_user(string $username): ?array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT username, email, full_name, role_name, password_hash FROM users WHERE username = :username LIMIT 1'
+        'SELECT id, username, email, full_name, role_name, password_hash FROM users WHERE username = :username LIMIT 1'
     );
     $statement->execute(['username' => strtolower(trim($username))]);
     $user = $statement->fetch();
@@ -21,6 +21,7 @@ function coolopz_find_user(string $username): ?array
     }
 
     return [
+        'id' => (int) $user['id'],
         'username' => $user['username'],
         'email' => $user['email'],
         'name' => $user['full_name'],
@@ -36,6 +37,14 @@ function coolopz_is_logged_in(): bool
 
 function coolopz_current_user(): ?array
 {
+    if (isset($_SESSION['coolopz_user']) && !isset($_SESSION['coolopz_user']['id']) && isset($_SESSION['coolopz_user']['username'])) {
+        $user = coolopz_find_user((string) $_SESSION['coolopz_user']['username']);
+
+        if ($user !== null) {
+            $_SESSION['coolopz_user']['id'] = $user['id'];
+        }
+    }
+
     return $_SESSION['coolopz_user'] ?? null;
 }
 
@@ -59,7 +68,7 @@ function coolopz_user_initials(string $name): string
 
 function coolopz_allowed_routes(): array
 {
-    return ['index.php', 'jobs.php', 'customers.php', 'reports.php', 'staff.php'];
+    return ['index.php', 'jobs.php', 'customers.php', 'services.php', 'reports.php', 'staff.php', 'clock.php'];
 }
 
 function coolopz_normalize_redirect(?string $target): string
@@ -83,6 +92,7 @@ function coolopz_login(string $username, string $password): bool
 
     session_regenerate_id(true);
     $_SESSION['coolopz_user'] = [
+        'id' => $user['id'],
         'username' => $user['username'],
         'email' => $user['email'],
         'name' => $user['name'],

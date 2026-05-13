@@ -854,6 +854,104 @@ function coolopz_fetch_staff_users(): array
     return $statement->fetchAll();
 }
 
+function coolopz_find_open_staff_attendance(int $userId): ?array
+{
+    $statement = coolopz_db()->prepare(
+        'SELECT id, user_id, clock_in_at, clock_out_at, created_at, updated_at
+         FROM staff_attendance
+         WHERE user_id = :user_id AND clock_out_at IS NULL
+         ORDER BY clock_in_at DESC, id DESC
+         LIMIT 1'
+    );
+    $statement->execute(['user_id' => $userId]);
+    $attendance = $statement->fetch();
+
+    return $attendance === false ? null : $attendance;
+}
+
+function coolopz_clock_in_staff(int $userId): void
+{
+    if (coolopz_find_open_staff_attendance($userId) !== null) {
+        throw new RuntimeException('You are already clocked in.');
+    }
+
+    $statement = coolopz_db()->prepare(
+        'INSERT INTO staff_attendance (user_id) VALUES (:user_id)'
+    );
+    $statement->execute(['user_id' => $userId]);
+}
+
+function coolopz_clock_out_staff(int $userId): void
+{
+    $openAttendance = coolopz_find_open_staff_attendance($userId);
+
+    if ($openAttendance === null) {
+        throw new RuntimeException('You are not currently clocked in.');
+    }
+
+    $statement = coolopz_db()->prepare(
+        'UPDATE staff_attendance
+         SET clock_out_at = CURRENT_TIMESTAMP
+         WHERE id = :id AND user_id = :user_id AND clock_out_at IS NULL'
+    );
+    $statement->execute([
+        'id' => (int) $openAttendance['id'],
+        'user_id' => $userId,
+    ]);
+}
+
+function coolopz_fetch_staff_clock_summary(int $userId): array
+{
+    $pdo = coolopz_db();
+    $totalsStatement = $pdo->prepare(
+        'SELECT
+            COALESCE(SUM(CASE WHEN DATE(clock_in_at) = CURDATE() THEN TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP)) ELSE 0 END), 0) AS today_minutes,
+            COALESCE(SUM(CASE WHEN YEARWEEK(clock_in_at, 1) = YEARWEEK(CURDATE(), 1) THEN TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP)) ELSE 0 END), 0) AS week_minutes
+         FROM staff_attendance
+         WHERE user_id = :user_id'
+    );
+    $totalsStatement->execute(['user_id' => $userId]);
+    $totals = $totalsStatement->fetch() ?: ['today_minutes' => 0, 'week_minutes' => 0];
+
+    $lastEntryStatement = $pdo->prepare(
+        'SELECT id, user_id, clock_in_at, clock_out_at, created_at, updated_at
+         FROM staff_attendance
+         WHERE user_id = :user_id
+         ORDER BY clock_in_at DESC, id DESC
+         LIMIT 1'
+    );
+    $lastEntryStatement->execute(['user_id' => $userId]);
+    $lastEntry = $lastEntryStatement->fetch();
+
+    return [
+        'open_entry' => coolopz_find_open_staff_attendance($userId),
+        'last_entry' => $lastEntry === false ? null : $lastEntry,
+        'today_minutes' => (int) $totals['today_minutes'],
+        'week_minutes' => (int) $totals['week_minutes'],
+    ];
+}
+
+function coolopz_fetch_staff_clock_history(int $userId, int $limit = 10): array
+{
+    $limit = max(1, min($limit, 50));
+    $statement = coolopz_db()->prepare(
+        'SELECT id,
+                user_id,
+                clock_in_at,
+                clock_out_at,
+                TIMESTAMPDIFF(MINUTE, clock_in_at, COALESCE(clock_out_at, CURRENT_TIMESTAMP)) AS worked_minutes,
+                created_at,
+                updated_at
+         FROM staff_attendance
+         WHERE user_id = :user_id
+         ORDER BY clock_in_at DESC, id DESC
+         LIMIT ' . $limit
+    );
+    $statement->execute(['user_id' => $userId]);
+
+    return $statement->fetchAll();
+}
+
 function coolopz_fetch_customer_options(): array
 {
     $statement = coolopz_db()->query(

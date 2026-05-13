@@ -299,6 +299,31 @@ function coolopz_ensure_job_report_photos_table(PDO $pdo): void
     );
 }
 
+function coolopz_ensure_staff_attendance_table(PDO $pdo): void
+{
+    static $staffAttendanceEnsured = false;
+
+    if ($staffAttendanceEnsured) {
+        return;
+    }
+
+    $staffAttendanceEnsured = true;
+
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS staff_attendance (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            clock_in_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            clock_out_at DATETIME DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            KEY idx_staff_attendance_user_clock_in (user_id, clock_in_at),
+            KEY idx_staff_attendance_open_shift (user_id, clock_out_at),
+            CONSTRAINT fk_staff_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )'
+    );
+}
+
 function coolopz_ensure_job_columns(PDO $pdo): void
 {
     static $jobColumnsEnsured = false;
@@ -405,6 +430,7 @@ function coolopz_db(): PDO
     coolopz_ensure_job_columns($pdo);
     coolopz_ensure_job_services_table($pdo);
     coolopz_ensure_job_report_photos_table($pdo);
+    coolopz_ensure_staff_attendance_table($pdo);
 
     return $pdo;
 }

@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS users (
     UNIQUE KEY uniq_users_username (username)
 );
 
+CREATE TABLE IF NOT EXISTS staff_attendance (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    clock_in_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    clock_out_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_staff_attendance_user_clock_in (user_id, clock_in_at),
+    KEY idx_staff_attendance_open_shift (user_id, clock_out_at),
+    CONSTRAINT fk_staff_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(190) NOT NULL,

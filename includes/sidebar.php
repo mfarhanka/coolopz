@@ -27,6 +27,12 @@ $navItems = [
         'icon' => '<path d="M20 7 9 18l-5-5"></path><path d="M14 7h6v6"></path><path d="M4 7h5"></path><path d="M4 12h8"></path>',
     ],
     [
+        'key' => 'clock',
+        'href' => 'clock.php',
+        'label' => 'Clock In/Out',
+        'icon' => '<path d="M12 7v5l3 3"></path><circle cx="12" cy="12" r="8"></circle><path d="M17 4l3 3"></path>',
+    ],
+    [
         'key' => 'reports',
         'href' => 'reports.php',
         'label' => 'Reports',
