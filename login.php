@@ -10,19 +10,19 @@ if (coolopz_is_logged_in()) {
 
 $pageTitle = 'CoolOpz Portal | Login';
 $errorMessage = '';
-$email = '';
+$username = '';
 $redirectTo = coolopz_normalize_redirect($_GET['redirect'] ?? $_POST['redirect'] ?? 'index.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim((string) ($_POST['email'] ?? ''));
+    $username = strtolower(trim((string) ($_POST['username'] ?? '')));
     $password = (string) ($_POST['password'] ?? '');
 
-    if (coolopz_login($email, $password)) {
+    if (coolopz_login($username, $password)) {
         header('Location: ' . $redirectTo);
         exit;
     }
 
-    $errorMessage = 'Invalid email or password.';
+    $errorMessage = 'Invalid username or password.';
 }
 ?>
 <!DOCTYPE html>
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="login-copy">
                 <span class="section-label">Login</span>
                 <h1 class="login-title">Sign in to continue</h1>
-                <p>Use the admin account below to access the portal.</p>
+                <p>Use your username and password to access the portal.</p>
             </div>
 
 <?php if ($errorMessage !== ''): ?>
@@ -62,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectTo, ENT_QUOTES, 'UTF-8') ?>">
 
                 <div class="col-12">
-                    <label class="form-label" for="email">Email</label>
-                    <input class="form-control" id="email" name="email" type="email" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>" placeholder="admin@coolopz.local" required>
+                    <label class="form-label" for="username">Username</label>
+                    <input class="form-control" id="username" name="username" type="text" value="<?= htmlspecialchars($username, ENT_QUOTES, 'UTF-8') ?>" placeholder="admin" required>
                 </div>
 
                 <div class="col-12">
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="login-help">
                 <strong>Demo account</strong>
-                <span>Email: admin@coolopz.local</span>
+                <span>Username: admin</span>
                 <span>Password: CoolOpz123!</span>
             </div>
         </section>

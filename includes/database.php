@@ -27,6 +27,97 @@ function coolopz_default_services(): array
     ];
 }
 
+function coolopz_username_slug(string $value, int $fallbackId = 0): string
+{
+    $value = strtolower(trim($value));
+    $value = preg_replace('/[^a-z0-9]+/', '.', $value) ?? '';
+    $value = trim($value, '.');
+
+    if ($value === '') {
+        $value = $fallbackId > 0 ? 'user' . $fallbackId : 'user';
+    }
+
+    return substr($value, 0, 50);
+}
+
+function coolopz_ensure_user_columns(PDO $pdo): void
+{
+    static $userColumnsEnsured = false;
+
+    if ($userColumnsEnsured) {
+        return;
+    }
+
+    $userColumnsEnsured = true;
+
+    $columnStatement = $pdo->prepare(
+        'SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = :table_name
+           AND COLUMN_NAME = :column_name
+         LIMIT 1'
+    );
+    $columnStatement->execute([
+        'table_name' => 'users',
+        'column_name' => 'username',
+    ]);
+
+    if ($columnStatement->fetch() === false) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN username VARCHAR(80) DEFAULT NULL AFTER id");
+    }
+
+    $users = $pdo->query('SELECT id, email, full_name, username FROM users ORDER BY id ASC')->fetchAll();
+    $reservedUsernames = [];
+    $updateStatement = $pdo->prepare('UPDATE users SET username = :username WHERE id = :id');
+
+    foreach ($users as $user) {
+        $currentUsername = trim((string) ($user['username'] ?? ''));
+        if ($currentUsername !== '') {
+            $candidate = coolopz_username_slug($currentUsername, (int) $user['id']);
+        } else {
+            $email = trim((string) ($user['email'] ?? ''));
+            $localPart = $email !== '' && str_contains($email, '@') ? strstr($email, '@', true) : '';
+            $candidate = coolopz_username_slug($localPart !== false ? (string) $localPart : (string) ($user['full_name'] ?? ''), (int) $user['id']);
+        }
+
+        $baseCandidate = $candidate;
+        $suffix = 2;
+        while (isset($reservedUsernames[$candidate])) {
+            $candidate = substr($baseCandidate, 0, max(1, 50 - strlen((string) $suffix))) . $suffix;
+            $suffix++;
+        }
+
+        $reservedUsernames[$candidate] = true;
+
+        if ($candidate !== $currentUsername) {
+            $updateStatement->execute([
+                'id' => (int) $user['id'],
+                'username' => $candidate,
+            ]);
+        }
+    }
+
+    $pdo->exec('ALTER TABLE users MODIFY COLUMN username VARCHAR(80) NOT NULL');
+
+    $indexStatement = $pdo->prepare(
+        'SELECT 1
+         FROM information_schema.STATISTICS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = :table_name
+           AND INDEX_NAME = :index_name
+         LIMIT 1'
+    );
+    $indexStatement->execute([
+        'table_name' => 'users',
+        'index_name' => 'uniq_users_username',
+    ]);
+
+    if ($indexStatement->fetch() === false) {
+        $pdo->exec('ALTER TABLE users ADD UNIQUE KEY uniq_users_username (username)');
+    }
+}
+
 function coolopz_ensure_customer_contact_columns(PDO $pdo): void
 {
     static $columnsEnsured = false;
@@ -308,6 +399,7 @@ function coolopz_db(): PDO
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
 
+    coolopz_ensure_user_columns($pdo);
     coolopz_ensure_customer_contact_columns($pdo);
     coolopz_ensure_services_table($pdo);
     coolopz_ensure_job_columns($pdo);

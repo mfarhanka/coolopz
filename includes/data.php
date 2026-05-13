@@ -848,7 +848,7 @@ function coolopz_fetch_staff_metrics(): array
 function coolopz_fetch_staff_users(): array
 {
     $statement = coolopz_db()->query(
-        'SELECT id, full_name, email, role_name, created_at FROM users ORDER BY created_at DESC, id DESC'
+        'SELECT id, username, full_name, email, role_name, created_at FROM users ORDER BY created_at DESC, id DESC'
     );
 
     return $statement->fetchAll();
@@ -878,7 +878,7 @@ function coolopz_fetch_assignable_staff(): array
 function coolopz_find_staff_user(int $userId): ?array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT id, full_name, email, role_name, created_at FROM users WHERE id = :id LIMIT 1'
+        'SELECT id, username, full_name, email, role_name, created_at FROM users WHERE id = :id LIMIT 1'
     );
     $statement->execute(['id' => $userId]);
     $user = $statement->fetch();
@@ -886,13 +886,14 @@ function coolopz_find_staff_user(int $userId): ?array
     return $user === false ? null : $user;
 }
 
-function coolopz_create_staff_user(string $fullName, string $email, string $roleName, string $password): void
+function coolopz_create_staff_user(string $username, string $fullName, string $email, string $roleName, string $password): void
 {
     $statement = coolopz_db()->prepare(
-        'INSERT INTO users (email, full_name, role_name, password_hash) VALUES (:email, :full_name, :role_name, :password_hash)'
+        'INSERT INTO users (username, email, full_name, role_name, password_hash) VALUES (:username, :email, :full_name, :role_name, :password_hash)'
     );
 
     $statement->execute([
+        'username' => strtolower(trim($username)),
         'email' => $email,
         'full_name' => $fullName,
         'role_name' => $roleName,

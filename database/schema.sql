@@ -3,11 +3,13 @@ USE coolopz_portal;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(80) NOT NULL,
     email VARCHAR(190) NOT NULL UNIQUE,
     full_name VARCHAR(120) NOT NULL,
     role_name VARCHAR(120) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_users_username (username)
 );
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -74,9 +76,10 @@ CREATE TABLE IF NOT EXISTS services (
     UNIQUE KEY uniq_service_name (name)
 );
 
-INSERT INTO users (email, full_name, role_name, password_hash)
-VALUES ('admin@coolopz.local', 'Admin User', 'Operations Admin', '$2y$10$C9hFVK0LFCUv2aw9zR/ChOZRpZHcC/UmCJyFpAjIjFzSM3t.O2b82')
+INSERT INTO users (username, email, full_name, role_name, password_hash)
+VALUES ('admin', 'admin@coolopz.local', 'Admin User', 'Operations Admin', '$2y$10$C9hFVK0LFCUv2aw9zR/ChOZRpZHcC/UmCJyFpAjIjFzSM3t.O2b82')
 ON DUPLICATE KEY UPDATE
+    username = VALUES(username),
     full_name = VALUES(full_name),
     role_name = VALUES(role_name),
     password_hash = VALUES(password_hash);

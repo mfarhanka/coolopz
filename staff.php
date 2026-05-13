@@ -25,6 +25,7 @@ $successMessage = match ($messageKey) {
     default => '',
 };
 $formData = [
+    'username' => '',
     'full_name' => '',
     'email' => '',
     'role_name' => 'Service Coordinator',
@@ -75,13 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } else {
+        $formData['username'] = strtolower(trim((string) ($_POST['username'] ?? '')));
         $formData['full_name'] = trim((string) ($_POST['full_name'] ?? ''));
         $formData['email'] = trim((string) ($_POST['email'] ?? ''));
         $formData['role_name'] = trim((string) ($_POST['role_name'] ?? 'Service Coordinator'));
         $password = (string) ($_POST['password'] ?? '');
 
-        if ($formData['full_name'] === '' || $formData['email'] === '' || $password === '') {
-            $errorMessage = 'Name, email, and password are required.';
+        if ($formData['username'] === '' || $formData['full_name'] === '' || $formData['email'] === '' || $password === '') {
+            $errorMessage = 'Username, name, email, and password are required.';
+        } elseif (!preg_match('/^[a-z0-9._-]{3,50}$/', $formData['username'])) {
+            $errorMessage = 'Username must be 3-50 characters using letters, numbers, dots, dashes, or underscores.';
         } elseif (!filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) {
             $errorMessage = 'Enter a valid email address.';
         } elseif (!in_array($formData['role_name'], $allowedRoles, true)) {
@@ -90,13 +94,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errorMessage = 'Password must be at least 8 characters.';
         } else {
             try {
-                coolopz_create_staff_user($formData['full_name'], $formData['email'], $formData['role_name'], $password);
+                coolopz_create_staff_user($formData['username'], $formData['full_name'], $formData['email'], $formData['role_name'], $password);
                 header('Location: staff.php?message=created');
                 exit;
             } catch (PDOException $exception) {
-                $errorMessage = str_contains($exception->getMessage(), 'Duplicate')
-                    ? 'That email address already exists.'
-                    : 'Unable to create the staff account right now.';
+                $errorMessage = str_contains($exception->getMessage(), 'username')
+                    ? 'That username already exists.'
+                    : (str_contains($exception->getMessage(), 'Duplicate')
+                        ? 'That email address already exists.'
+                        : 'Unable to create the staff account right now.'
+                    );
             }
         }
     }
@@ -155,6 +162,11 @@ include __DIR__ . '/includes/sidebar.php';
 
                         <form method="post" class="row g-2 mt-0">
                             <div class="col-12">
+                                <label class="form-label" for="username">Username</label>
+                                <input class="form-control" id="username" name="username" type="text" value="<?= htmlspecialchars($formData['username'], ENT_QUOTES, 'UTF-8') ?>" pattern="[A-Za-z0-9._-]{3,50}" required>
+                                <div class="form-text">This username is used to sign in.</div>
+                            </div>
+                            <div class="col-12">
                                 <label class="form-label" for="full_name">Full Name</label>
                                 <input class="form-control" id="full_name" name="full_name" type="text" value="<?= htmlspecialchars($formData['full_name'], ENT_QUOTES, 'UTF-8') ?>" required>
                             </div>
@@ -196,6 +208,7 @@ include __DIR__ . '/includes/sidebar.php';
                             <table class="table portal-table align-middle mb-0">
                                 <thead>
                                     <tr>
+                                        <th>Username</th>
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Role</th>
@@ -207,6 +220,7 @@ include __DIR__ . '/includes/sidebar.php';
 <?php foreach ($staffUsers as $user): ?>
 <?php $isCurrentUser = ($user['email'] ?? '') === ($currentUser['email'] ?? ''); ?>
                                     <tr>
+                                        <td><?= htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars($user['full_name'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><?= htmlspecialchars($user['email'], ENT_QUOTES, 'UTF-8') ?></td>
                                         <td><span class="status-badge <?= coolopz_status_badge_class($user['role_name'] === 'Operations Admin' ? 'Priority' : 'In Progress') ?>"><?= htmlspecialchars($user['role_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
@@ -236,7 +250,7 @@ include __DIR__ . '/includes/sidebar.php';
                             <div>
                                 <span class="section-label">Password</span>
                                 <h3 class="panel-title">Reset Password for <?= htmlspecialchars($resetPasswordUser['full_name'], ENT_QUOTES, 'UTF-8') ?></h3>
-                                <p class="hero-copy mb-0">Set a new password for <?= htmlspecialchars($resetPasswordUser['email'], ENT_QUOTES, 'UTF-8') ?>.</p>
+                                <p class="hero-copy mb-0">Set a new password for <?= htmlspecialchars($resetPasswordUser['username'], ENT_QUOTES, 'UTF-8') ?>.</p>
                             </div>
 
                             <form method="post" class="row g-2 mt-0">

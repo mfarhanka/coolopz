@@ -8,12 +8,12 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-function coolopz_find_user(string $email): ?array
+function coolopz_find_user(string $username): ?array
 {
     $statement = coolopz_db()->prepare(
-        'SELECT email, full_name, role_name, password_hash FROM users WHERE email = :email LIMIT 1'
+        'SELECT username, email, full_name, role_name, password_hash FROM users WHERE username = :username LIMIT 1'
     );
-    $statement->execute(['email' => $email]);
+    $statement->execute(['username' => strtolower(trim($username))]);
     $user = $statement->fetch();
 
     if ($user === false) {
@@ -21,6 +21,7 @@ function coolopz_find_user(string $email): ?array
     }
 
     return [
+        'username' => $user['username'],
         'email' => $user['email'],
         'name' => $user['full_name'],
         'role' => $user['role_name'],
@@ -72,9 +73,9 @@ function coolopz_normalize_redirect(?string $target): string
     return 'index.php';
 }
 
-function coolopz_login(string $email, string $password): bool
+function coolopz_login(string $username, string $password): bool
 {
-    $user = coolopz_find_user($email);
+    $user = coolopz_find_user($username);
 
     if ($user === null || !password_verify($password, $user['password_hash'])) {
         return false;
@@ -82,6 +83,7 @@ function coolopz_login(string $email, string $password): bool
 
     session_regenerate_id(true);
     $_SESSION['coolopz_user'] = [
+        'username' => $user['username'],
         'email' => $user['email'],
         'name' => $user['name'],
         'role' => $user['role'],
